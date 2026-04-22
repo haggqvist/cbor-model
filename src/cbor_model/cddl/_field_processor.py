@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
@@ -12,6 +12,19 @@ if TYPE_CHECKING:
 from cbor_model._util import is_optional
 
 from ._naming import to_snake
+
+
+class ProcessedField(NamedTuple):
+    """Structured field payload used by CDDL rendering.
+
+    Attributes:
+        text: Contains the left/right CDDL field expression without separators.
+        description: Contains the optional comment text.
+
+    """
+
+    text: str
+    description: str | None = None
 
 
 class FieldProcessor:
@@ -27,7 +40,7 @@ class FieldProcessor:
         cbor_field: CBORField,
         config: CBORConfig,
         model_prefix: str | None = None,
-    ) -> str:
+    ) -> ProcessedField:
         """Generate CDDL field definition from Pydantic FieldInfo and CBORField."""
         if field_info.annotation is None:
             err = f"Field {field_name!r} must have a type annotation"
@@ -57,6 +70,7 @@ class FieldProcessor:
         else:
             lhs = str(key)
 
-        if cbor_field.description:
-            return f"{optional_prefix}{lhs}: {cddl_type},  ; {cbor_field.description}"
-        return f"{optional_prefix}{lhs}: {cddl_type}"
+        return ProcessedField(
+            text=f"{optional_prefix}{lhs}: {cddl_type}",
+            description=cbor_field.description,
+        )

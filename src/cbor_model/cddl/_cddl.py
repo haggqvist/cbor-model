@@ -8,7 +8,7 @@ from pydantic.fields import FieldInfo
 from cbor_model import CBORModel
 from cbor_model._util import extract_types_matching
 
-from ._field_processor import FieldProcessor
+from ._field_processor import FieldProcessor, ProcessedField
 from ._naming import to_snake
 from ._type_converter import TypeConverter
 
@@ -119,18 +119,32 @@ class CDDLGenerator:
         ]
 
         fields = self._generate_fields(model)
-        fields_str = ",\n    ".join(fields)
+        fields_str = "\n    ".join(self._format_field_lines(fields))
         if model.cbor_config.encoding == "array":
             struct_def = f"{model.__name__} = [\n    {fields_str}\n]"
         else:
             struct_def = f"{model.__name__} = {{\n    {fields_str}\n}}"
 
-        key_defs = (
-            [d] if (d := self._generate_key_definitions(model)) else []
-        )
+        key_defs = [d] if (d := self._generate_key_definitions(model)) else []
 
         all_defs = enum_defs + dep_defs + key_defs
         return "\n\n".join([*all_defs, struct_def]) if all_defs else struct_def
+
+    def _format_field_lines(self, fields: list[ProcessedField]) -> list[str]:
+        """Add field separators while keeping comment formatting consistent."""
+        if not fields:
+            return []
+
+        formatted: list[str] = []
+        for i, field in enumerate(fields):
+            is_last = i == len(fields) - 1
+            text = field.text + "," if not is_last else field.text
+            if field.description:
+                formatted.append(f"{text}  ; {field.description}")
+            else:
+                formatted.append(text)
+
+        return formatted
 
     def _generate_key_definitions[T: CBORModel](self, model: type[T]) -> str:
         """Generate the per-model integer-key constant block.
@@ -155,9 +169,7 @@ class CDDLGenerator:
             return ""
 
         entries.sort(key=lambda item: item[0])
-        return "\n".join(
-            f"{prefix}_{suffix} = {key}" for key, suffix in entries
-        )
+        return "\n".join(f"{prefix}_{suffix} = {key}" for key, suffix in entries)
 
     def _iter_cbor_fields(
         self,
@@ -193,7 +205,7 @@ class CDDLGenerator:
         ]
         return models, enums
 
-    def _generate_fields[T: CBORModel](self, model: type[T]) -> list[str]:
+    def _generate_fields[T: CBORModel](self, model: type[T]) -> list[ProcessedField]:
         """Generate CDDL field definitions for a model."""
         is_array = model.cbor_config.encoding == "array"
         model_prefix = None if is_array else to_snake(model.__name__)

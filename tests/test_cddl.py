@@ -1271,6 +1271,7 @@ HTTPResponse = {
 }"""
         assert cddl == expected
 
+
 class TestCDDLDescription:
     """Test ``CBORField.description`` rendering."""
 
@@ -1288,8 +1289,27 @@ class TestCDDLDescription:
 person_age = 1
 
 Person = {
-    person_name: tstr,  ; full name,
+    person_name: tstr,  ; full name
     person_age: int
+}"""
+        assert cddl == expected
+
+    def test_description_in_last_field(self) -> None:
+        """A description on the last field of a map does not include leading comma."""
+
+        class Person(CBORModel):
+            name: Annotated[str, CBORField(key=0)]
+            age: Annotated[int, CBORField(key=1, description="age in years")]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Person)
+
+        expected = """person_name = 0
+person_age = 1
+
+Person = {
+    person_name: tstr,
+    person_age: int  ; age in years
 }"""
         assert cddl == expected
 
@@ -1305,7 +1325,7 @@ Person = {
         cddl = generator.generate(Point)
 
         expected = """Point = [
-    x: float,  ; x coordinate,
+    x: float,  ; x coordinate
     y: float
 ]"""
         assert cddl == expected
@@ -1331,6 +1351,6 @@ Person = {
         cddl = generator.generate(Cfg)
 
         expected = """Cfg = {
-    a: tstr,  ; the alpha value
+    a: tstr  ; the alpha value
 }"""
         assert cddl == expected
