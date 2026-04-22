@@ -31,9 +31,12 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Person)
 
-        expected = """Person = {
-    0: tstr,  ; name,
-    1: uint,  ; age
+        expected = """person_name = 0
+person_age = 1
+
+Person = {
+    person_name: tstr,
+    person_age: uint
 }"""
         assert cddl == expected
 
@@ -47,9 +50,12 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Contact)
 
-        expected = """Contact = {
-    0: tstr,  ; email,
-    ? 1: tstr,  ; phone
+        expected = """contact_email = 0
+contact_phone = 1
+
+Contact = {
+    contact_email: tstr,
+    ? contact_phone: tstr
 }"""
         assert cddl == expected
 
@@ -63,9 +69,12 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Team)
 
-        expected = """Team = {
-    0: tstr,  ; name,
-    1: [* tstr],  ; members
+        expected = """team_name = 0
+team_members = 1
+
+Team = {
+    team_name: tstr,
+    team_members: [* tstr]
 }"""
         assert cddl == expected
 
@@ -108,9 +117,12 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Team)
 
-        expected = f"""Team = {{
-    0: tstr,  ; name,
-    1: {expected_type},  ; members
+        expected = f"""team_name = 0
+team_members = 1
+
+Team = {{
+    team_name: tstr,
+    team_members: {expected_type}
 }}"""
         assert cddl == expected
 
@@ -147,8 +159,10 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Person)
 
-        expected = f"""Person = {{
-    0: {expected_type},  ; name
+        expected = f"""person_name = 0
+
+Person = {{
+    person_name: {expected_type}
 }}"""
         assert cddl == expected
 
@@ -187,8 +201,10 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Packet)
 
-        expected = f"""Packet = {{
-    0: {expected_type},  ; data
+        expected = f"""packet_data = 0
+
+Packet = {{
+    packet_data: {expected_type}
 }}"""
         assert cddl == expected
 
@@ -225,8 +241,10 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Person)
 
-        expected = f"""Person = {{
-    ? 0: {expected_type},  ; name
+        expected = f"""person_name = 0
+
+Person = {{
+    ? person_name: {expected_type}
 }}"""
         assert cddl == expected
 
@@ -244,14 +262,20 @@ class TestCDDLGenerator:
         generator = CDDLGenerator()
         cddl = generator.generate(Company)
 
-        expected = """Address = {
-    0: tstr,  ; street,
-    1: tstr,  ; city
+        expected = """address_street = 0
+address_city = 1
+
+Address = {
+    address_street: tstr,
+    address_city: tstr
 }
 
+company_name = 0
+company_address = 1
+
 Company = {
-    0: tstr,  ; name,
-    1: Address,  ; address
+    company_name: tstr,
+    company_address: Address
 }"""
         assert cddl == expected
 
@@ -265,14 +289,17 @@ Company = {
         generator = CDDLGenerator()
         cddl = generator.generate(Node)
 
-        expected = """Node = {
-    0: int,  ; value,
-    ? 1: [* Node],  ; children
+        expected = """node_value = 0
+node_children = 1
+
+Node = {
+    node_value: int,
+    ? node_children: [* Node]
 }"""
         assert cddl == expected
 
     def test_override_name(self) -> None:
-        """Test CDDL generation with override_name."""
+        """Test CDDL generation with override_name (used verbatim)."""
 
         class Product(CBORModel):
             internal_id: Annotated[
@@ -283,8 +310,10 @@ Company = {
         generator = CDDLGenerator()
         cddl = generator.generate(Product)
 
-        expected = """Product = {
-    0: tstr,  ; product_id
+        expected = """product_product_id = 0
+
+Product = {
+    product_product_id: tstr
 }"""
         assert cddl == expected
 
@@ -300,8 +329,10 @@ Company = {
         generator = CDDLGenerator()
         cddl = generator.generate(Config)
 
-        expected = """Config = {
-    0: bstr .size 32,  ; data
+        expected = """config_data = 0
+
+Config = {
+    config_data: bstr .size 32
 }"""
         assert cddl == expected
 
@@ -314,8 +345,10 @@ Company = {
         generator = CDDLGenerator()
         cddl = generator.generate(Tagged)
 
-        expected = """Tagged = {
-    0: #6.123(tstr),  ; value
+        expected = """tagged_value = 0
+
+Tagged = {
+    tagged_value: #6.123(tstr)
 }"""
         assert cddl == expected
 
@@ -332,12 +365,18 @@ Company = {
         generator = CDDLGenerator()
         cddl = generator.generate(Types)
 
-        expected = """Types = {
-    0: tstr,  ; text,
-    1: bstr,  ; data,
-    2: int,  ; count,
-    3: bool,  ; flag,
-    4: float,  ; ratio
+        expected = """types_text = 0
+types_data = 1
+types_count = 2
+types_flag = 3
+types_ratio = 4
+
+Types = {
+    types_text: tstr,
+    types_data: bstr,
+    types_count: int,
+    types_flag: bool,
+    types_ratio: float
 }"""
         assert cddl == expected
 
@@ -352,10 +391,14 @@ Company = {
         generator = CDDLGenerator()
         cddl = generator.generate(Numbers)
 
-        expected = """Numbers = {
-    0: uint,  ; positive_gt,
-    1: uint,  ; positive_ge,
-    2: int,  ; any_int
+        expected = """numbers_positive_gt = 0
+numbers_positive_ge = 1
+numbers_any_int = 2
+
+Numbers = {
+    numbers_positive_gt: uint,
+    numbers_positive_ge: uint,
+    numbers_any_int: int
 }"""
         assert cddl == expected
 
@@ -372,9 +415,12 @@ Company = {
         generator = CDDLGenerator()
         cddl = generator.generate(Example)
 
-        expected = """Example = {
-    0: tstr,  ; required_with_default,
-    ? 1: [* tstr],  ; explicit_optional
+        expected = """example_required_with_default = 0
+example_explicit_optional = 1
+
+Example = {
+    example_required_with_default: tstr,
+    ? example_explicit_optional: [* tstr]
 }"""
         assert cddl == expected
 
@@ -399,9 +445,12 @@ Company = {
     BLUE: 3
 )
 
+palette_primary = 0
+palette_secondary = 1
+
 Palette = {
-    0: Color,  ; primary,
-    ? 1: Color,  ; secondary
+    palette_primary: Color,
+    ? palette_secondary: Color
 }"""
         assert cddl == expected
 
@@ -414,8 +463,10 @@ Palette = {
         generator = CDDLGenerator()
         cddl = generator.generate(Config)
 
-        expected = """Config = {
-    0: {* tstr => tstr},  ; metadata
+        expected = """config_metadata = 0
+
+Config = {
+    config_metadata: {* tstr => tstr}
 }"""
         assert cddl == expected
 
@@ -428,8 +479,10 @@ Palette = {
         generator = CDDLGenerator()
         cddl = generator.generate(Config)
 
-        expected = """Config = {
-    0: {* tstr => any},  ; data
+        expected = """config_data = 0
+
+Config = {
+    config_data: {* tstr => any}
 }"""
         assert cddl == expected
 
@@ -621,13 +674,20 @@ class TestCDDLUtilities:
         generator = CDDLGenerator()
         cddl = generator.generate(Numbers)
 
-        expected = """Numbers = {
-    0: uint,  ; positive_gt,
-    1: uint,  ; positive_ge,
-    2: int,  ; any_int,
-    3: nint,  ; negative_lt,
-    4: nint,  ; negative_le,
-    5: int -10..10,  ; custom
+        expected = """numbers_positive_gt = 0
+numbers_positive_ge = 1
+numbers_any_int = 2
+numbers_negative_lt = 3
+numbers_negative_le = 4
+numbers_custom = 5
+
+Numbers = {
+    numbers_positive_gt: uint,
+    numbers_positive_ge: uint,
+    numbers_any_int: int,
+    numbers_negative_lt: nint,
+    numbers_negative_le: nint,
+    numbers_custom: int -10..10
 }"""
         assert cddl == expected
 
@@ -764,9 +824,12 @@ Outer = [
     a: tstr
 ]
 
+map_model_value = 0
+map_model_nested = 1
+
 MapModel = {
-    0: tstr,  ; value,
-    1: ArrayModel,  ; nested
+    map_model_value: tstr,
+    map_model_nested: ArrayModel
 }"""
         assert map_cddl == expected
 
@@ -787,9 +850,12 @@ class TestCDDLComputedFields:
         generator = CDDLGenerator()
         cddl = generator.generate(Model)
 
-        expected = """Model = {
-    0: tstr,  ; name,
-    1: tstr,  ; name_upper
+        expected = """model_name = 0
+model_name_upper = 1
+
+Model = {
+    model_name: tstr,
+    model_name_upper: tstr
 }"""
         assert cddl == expected
 
@@ -824,8 +890,10 @@ class TestCDDLComputedFields:
         generator = CDDLGenerator()
         cddl = generator.generate(Model)
 
-        expected = """Model = {
-    0: tstr,  ; name
+        expected = """model_name = 0
+
+Model = {
+    model_name: tstr
 }"""
         assert cddl == expected
 
@@ -844,13 +912,18 @@ class TestCDDLComputedFields:
         generator = CDDLGenerator()
         cddl = generator.generate(Outer)
 
-        expected = """Inner = {
-    0: int,  ; value
+        expected = """inner_value = 0
+
+Inner = {
+    inner_value: int
 }
 
+outer_name = 0
+outer_derived = 1
+
 Outer = {
-    0: tstr,  ; name,
-    1: Inner,  ; derived
+    outer_name: tstr,
+    outer_derived: Inner
 }"""
         assert cddl == expected
 
@@ -868,12 +941,16 @@ class TestGenerateMultiple:
         generator = CDDLGenerator()
         cddl = generator.generate([A, B])
 
-        expected = """A = {
-    0: tstr,  ; x
+        expected = """a_x = 0
+
+A = {
+    a_x: tstr
 }
 
+b_y = 0
+
 B = {
-    0: int,  ; y
+    b_y: int
 }"""
         assert cddl == expected
 
@@ -927,7 +1004,7 @@ class TestLiteralCDDL:
 
         generator = CDDLGenerator()
         cddl = generator.generate(Msg)
-        assert "0: 1," in cddl
+        assert "msg_type: 1" in cddl
 
     def test_literal_str(self) -> None:
 
@@ -936,7 +1013,7 @@ class TestLiteralCDDL:
 
         generator = CDDLGenerator()
         cddl = generator.generate(Msg)
-        assert '0: "ping",' in cddl
+        assert 'msg_kind: "ping"' in cddl
 
     def test_literal_bool(self) -> None:
 
@@ -945,7 +1022,7 @@ class TestLiteralCDDL:
 
         generator = CDDLGenerator()
         cddl = generator.generate(Msg)
-        assert "0: true," in cddl
+        assert "msg_flag: true" in cddl
 
     def test_literal_multi_value(self) -> None:
 
@@ -954,7 +1031,7 @@ class TestLiteralCDDL:
 
         generator = CDDLGenerator()
         cddl = generator.generate(Msg)
-        assert "0: 1 / 2 / 3," in cddl
+        assert "msg_code: 1 / 2 / 3" in cddl
 
     def test_literal_optional(self) -> None:
 
@@ -963,7 +1040,7 @@ class TestLiteralCDDL:
 
         generator = CDDLGenerator()
         cddl = generator.generate(Msg)
-        assert "? 0: 7," in cddl
+        assert "? msg_code: 7" in cddl
 
     def test_literal_unsupported_type_raises(self) -> None:
 
@@ -995,7 +1072,7 @@ class TestBstrWrapCDDL:
 
         generator = CDDLGenerator()
         cddl = generator.generate(Outer)
-        assert "0: bstr .cbor Inner," in cddl
+        assert "outer_inner: bstr .cbor Inner" in cddl
 
     def test_bstr_wrap_with_tag(self) -> None:
         class Wrapper(CBORModel):
@@ -1003,7 +1080,7 @@ class TestBstrWrapCDDL:
 
         generator = CDDLGenerator()
         cddl = generator.generate(Wrapper)
-        assert "0: #6.1001(bstr .cbor int)," in cddl
+        assert "wrapper_payload: #6.1001(bstr .cbor int)" in cddl
 
     def test_bstr_wrap_override_type_skips_cbor_annotation(self) -> None:
         class Wrapper(CBORModel):
@@ -1017,104 +1094,56 @@ class TestBstrWrapCDDL:
         assert "bstr .cbor" not in cddl
 
 
-class TestCDDLNamedKeys:
-    """Test CDDL generation when ``CBORConfig.named_keys`` is enabled."""
+class TestCDDLNamedKeysAlwaysOn:
+    """Test that map-encoded models always emit a named-key constant block."""
 
     def test_basic_named_keys_block(self) -> None:
-        """Map model with ``named_keys=True`` emits a definitions block."""
+        """Map model emits a snake_cased definitions block by default."""
 
         class Person(CBORModel):
-            cbor_config = CBORConfig(encoding="map", named_keys=True)
             name: Annotated[str, CBORField(key=0)]
             age: Annotated[int, CBORField(key=1)]
 
         generator = CDDLGenerator()
         cddl = generator.generate(Person)
 
-        expected = """Person_name = 0
-Person_age = 1
+        expected = """person_name = 0
+person_age = 1
 
 Person = {
-    Person_name: tstr,
-    Person_age: int
+    person_name: tstr,
+    person_age: int
 }"""
         assert cddl == expected
 
-    def test_named_keys_disabled_unchanged(self) -> None:
-        """``named_keys=False`` (the default) preserves the existing format."""
-
-        class Person(CBORModel):
-            name: Annotated[str, CBORField(key=0)]
-            age: Annotated[int, CBORField(key=1)]
-
-        generator = CDDLGenerator()
-        cddl = generator.generate(Person)
-
-        expected = """Person = {
-    0: tstr,  ; name,
-    1: int,  ; age
-}"""
-        assert cddl == expected
-
-    def test_nested_outer_only_named(self) -> None:
-        """Only models with ``named_keys=True`` emit their own definitions."""
+    def test_nested_both_emit_blocks(self) -> None:
+        """Each map-encoded model gets its own prefixed block."""
 
         class Inner(CBORModel):
             x: Annotated[int, CBORField(key=0)]
             y: Annotated[int, CBORField(key=1)]
 
         class Outer(CBORModel):
-            cbor_config = CBORConfig(named_keys=True)
             label: Annotated[str, CBORField(key=0)]
             point: Annotated[Inner, CBORField(key=1)]
 
         generator = CDDLGenerator()
         cddl = generator.generate(Outer)
 
-        expected = """Inner = {
-    0: int,  ; x,
-    1: int,  ; y
-}
-
-Outer_label = 0
-Outer_point = 1
-
-Outer = {
-    Outer_label: tstr,
-    Outer_point: Inner
-}"""
-        assert cddl == expected
-
-    def test_nested_both_named(self) -> None:
-        """Each model with ``named_keys=True`` gets its own prefixed block."""
-
-        class Inner(CBORModel):
-            cbor_config = CBORConfig(named_keys=True)
-            x: Annotated[int, CBORField(key=0)]
-            y: Annotated[int, CBORField(key=1)]
-
-        class Outer(CBORModel):
-            cbor_config = CBORConfig(named_keys=True)
-            label: Annotated[str, CBORField(key=0)]
-            point: Annotated[Inner, CBORField(key=1)]
-
-        generator = CDDLGenerator()
-        cddl = generator.generate(Outer)
-
-        expected = """Inner_x = 0
-Inner_y = 1
+        expected = """inner_x = 0
+inner_y = 1
 
 Inner = {
-    Inner_x: int,
-    Inner_y: int
+    inner_x: int,
+    inner_y: int
 }
 
-Outer_label = 0
-Outer_point = 1
+outer_label = 0
+outer_point = 1
 
 Outer = {
-    Outer_label: tstr,
-    Outer_point: Inner
+    outer_label: tstr,
+    outer_point: Inner
 }"""
         assert cddl == expected
 
@@ -1122,19 +1151,18 @@ Outer = {
         """Optional fields render with ``? `` before the named key."""
 
         class Msg(CBORModel):
-            cbor_config = CBORConfig(named_keys=True)
             required: Annotated[str, CBORField(key=0)]
             maybe: Annotated[str | None, CBORField(key=1)] = None
 
         generator = CDDLGenerator()
         cddl = generator.generate(Msg)
 
-        expected = """Msg_required = 0
-Msg_maybe = 1
+        expected = """msg_required = 0
+msg_maybe = 1
 
 Msg = {
-    Msg_required: tstr,
-    ? Msg_maybe: tstr
+    msg_required: tstr,
+    ? msg_maybe: tstr
 }"""
         assert cddl == expected
 
@@ -1145,7 +1173,6 @@ Msg = {
             v: Annotated[int, CBORField(key=0)]
 
         class Wrapper(CBORModel):
-            cbor_config = CBORConfig(named_keys=True)
             tagged: Annotated[bytes, CBORField(key=0, tag=24)]
             wrapped: Annotated[Inner, CBORField(key=1, bstr_wrap=True)]
             tagged_wrapped: Annotated[
@@ -1156,26 +1183,27 @@ Msg = {
         generator = CDDLGenerator()
         cddl = generator.generate(Wrapper)
 
-        expected = """Inner = {
-    0: int,  ; v
+        expected = """inner_v = 0
+
+Inner = {
+    inner_v: int
 }
 
-Wrapper_tagged = 0
-Wrapper_wrapped = 1
-Wrapper_tagged_wrapped = 2
+wrapper_tagged = 0
+wrapper_wrapped = 1
+wrapper_tagged_wrapped = 2
 
 Wrapper = {
-    Wrapper_tagged: #6.24(bstr),
-    Wrapper_wrapped: bstr .cbor Inner,
-    Wrapper_tagged_wrapped: #6.1001(bstr .cbor int)
+    wrapper_tagged: #6.24(bstr),
+    wrapper_wrapped: bstr .cbor Inner,
+    wrapper_tagged_wrapped: #6.1001(bstr .cbor int)
 }"""
         assert cddl == expected
 
-    def test_string_keys_unchanged_when_named_keys_enabled(self) -> None:
-        """String keys are not indirected through definitions and emit no block."""
+    def test_string_keys_stay_inlined(self) -> None:
+        """String keys are not indirected through a definitions block."""
 
         class StrOnly(CBORModel):
-            cbor_config = CBORConfig(named_keys=True)
             alpha: Annotated[str, CBORField(key="a")]
             beta: Annotated[int, CBORField(key="b")]
 
@@ -1183,16 +1211,16 @@ Wrapper = {
         cddl = generator.generate(StrOnly)
 
         expected = """StrOnly = {
-    a: tstr,  ; alpha,
-    b: int,  ; beta
+    a: tstr,
+    b: int
 }"""
         assert cddl == expected
 
-    def test_array_encoding_ignores_named_keys(self) -> None:
-        """``named_keys`` is silently ignored for array-encoded models."""
+    def test_array_encoding_unchanged(self) -> None:
+        """Array-encoded models do not produce a constant block."""
 
         class Point(CBORModel):
-            cbor_config = CBORConfig(encoding="array", named_keys=True)
+            cbor_config = CBORConfig(encoding="array")
             x: Annotated[float, CBORField(index=0)]
             y: Annotated[float, CBORField(index=1)]
 
@@ -1205,22 +1233,104 @@ Wrapper = {
 ]"""
         assert cddl == expected
 
-    def test_override_name_used_in_definition(self) -> None:
-        """``override_name`` is honored both in definitions and references."""
+    def test_override_name_kept_verbatim(self) -> None:
+        """``override_name`` is used verbatim (no snake conversion)."""
 
         class Product(CBORModel):
-            cbor_config = CBORConfig(named_keys=True)
             internal_id: Annotated[
                 str,
-                CBORField(key=0, override_name="product_id"),
+                CBORField(key=0, override_name="ProductID"),
             ]
 
         generator = CDDLGenerator()
         cddl = generator.generate(Product)
 
-        expected = """Product_product_id = 0
+        expected = """product_ProductID = 0
 
 Product = {
-    Product_product_id: tstr
+    product_ProductID: tstr
+}"""
+        assert cddl == expected
+
+    def test_pascal_class_name_snake_cased_in_helper(self) -> None:
+        """The model class name is snake_cased only as the helper prefix."""
+
+        class HTTPResponse(CBORModel):
+            status_code: Annotated[int, CBORField(key=0)]
+            body: Annotated[str, CBORField(key=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(HTTPResponse)
+
+        expected = """http_response_status_code = 0
+http_response_body = 1
+
+HTTPResponse = {
+    http_response_status_code: int,
+    http_response_body: tstr
+}"""
+        assert cddl == expected
+
+class TestCDDLDescription:
+    """Test ``CBORField.description`` rendering."""
+
+    def test_description_emits_semicolon_in_map(self) -> None:
+        """A description appears as ``; <text>`` after a map field."""
+
+        class Person(CBORModel):
+            name: Annotated[str, CBORField(key=0, description="full name")]
+            age: Annotated[int, CBORField(key=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Person)
+
+        expected = """person_name = 0
+person_age = 1
+
+Person = {
+    person_name: tstr,  ; full name,
+    person_age: int
+}"""
+        assert cddl == expected
+
+    def test_description_emits_semicolon_in_array(self) -> None:
+        """A description appears as ``; <text>`` after an array field."""
+
+        class Point(CBORModel):
+            cbor_config = CBORConfig(encoding="array")
+            x: Annotated[float, CBORField(index=0, description="x coordinate")]
+            y: Annotated[float, CBORField(index=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Point)
+
+        expected = """Point = [
+    x: float,  ; x coordinate,
+    y: float
+]"""
+        assert cddl == expected
+
+    def test_no_description_means_no_semicolon(self) -> None:
+        """Fields without ``description`` produce no trailing comment."""
+
+        class Person(CBORModel):
+            name: Annotated[str, CBORField(key=0)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Person)
+
+        assert ";" not in cddl
+
+    def test_description_on_string_keyed_map(self) -> None:
+        """Descriptions also apply to string-keyed map fields."""
+
+        class Cfg(CBORModel):
+            alpha: Annotated[str, CBORField(key="a", description="the alpha value")]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Cfg)
+
+        expected = """Cfg = {
+    a: tstr,  ; the alpha value
 }"""
         assert cddl == expected
