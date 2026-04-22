@@ -1015,3 +1015,212 @@ class TestBstrWrapCDDL:
         cddl = generator.generate(Wrapper)
         assert "my-type" in cddl
         assert "bstr .cbor" not in cddl
+
+
+class TestCDDLNamedKeys:
+    """Test CDDL generation when ``CBORConfig.named_keys`` is enabled."""
+
+    def test_basic_named_keys_block(self) -> None:
+        """Map model with ``named_keys=True`` emits a definitions block."""
+
+        class Person(CBORModel):
+            cbor_config = CBORConfig(encoding="map", named_keys=True)
+            name: Annotated[str, CBORField(key=0)]
+            age: Annotated[int, CBORField(key=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Person)
+
+        expected = """Person_name = 0
+Person_age = 1
+
+Person = {
+    Person_name: tstr,
+    Person_age: int
+}"""
+        assert cddl == expected
+
+    def test_named_keys_disabled_unchanged(self) -> None:
+        """``named_keys=False`` (the default) preserves the existing format."""
+
+        class Person(CBORModel):
+            name: Annotated[str, CBORField(key=0)]
+            age: Annotated[int, CBORField(key=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Person)
+
+        expected = """Person = {
+    0: tstr,  ; name,
+    1: int,  ; age
+}"""
+        assert cddl == expected
+
+    def test_nested_outer_only_named(self) -> None:
+        """Only models with ``named_keys=True`` emit their own definitions."""
+
+        class Inner(CBORModel):
+            x: Annotated[int, CBORField(key=0)]
+            y: Annotated[int, CBORField(key=1)]
+
+        class Outer(CBORModel):
+            cbor_config = CBORConfig(named_keys=True)
+            label: Annotated[str, CBORField(key=0)]
+            point: Annotated[Inner, CBORField(key=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Outer)
+
+        expected = """Inner = {
+    0: int,  ; x,
+    1: int,  ; y
+}
+
+Outer_label = 0
+Outer_point = 1
+
+Outer = {
+    Outer_label: tstr,
+    Outer_point: Inner
+}"""
+        assert cddl == expected
+
+    def test_nested_both_named(self) -> None:
+        """Each model with ``named_keys=True`` gets its own prefixed block."""
+
+        class Inner(CBORModel):
+            cbor_config = CBORConfig(named_keys=True)
+            x: Annotated[int, CBORField(key=0)]
+            y: Annotated[int, CBORField(key=1)]
+
+        class Outer(CBORModel):
+            cbor_config = CBORConfig(named_keys=True)
+            label: Annotated[str, CBORField(key=0)]
+            point: Annotated[Inner, CBORField(key=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Outer)
+
+        expected = """Inner_x = 0
+Inner_y = 1
+
+Inner = {
+    Inner_x: int,
+    Inner_y: int
+}
+
+Outer_label = 0
+Outer_point = 1
+
+Outer = {
+    Outer_label: tstr,
+    Outer_point: Inner
+}"""
+        assert cddl == expected
+
+    def test_optional_field_named_key(self) -> None:
+        """Optional fields render with ``? `` before the named key."""
+
+        class Msg(CBORModel):
+            cbor_config = CBORConfig(named_keys=True)
+            required: Annotated[str, CBORField(key=0)]
+            maybe: Annotated[str | None, CBORField(key=1)] = None
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Msg)
+
+        expected = """Msg_required = 0
+Msg_maybe = 1
+
+Msg = {
+    Msg_required: tstr,
+    ? Msg_maybe: tstr
+}"""
+        assert cddl == expected
+
+    def test_tag_and_bstr_wrap_modifiers(self) -> None:
+        """Type modifiers (tag, bstr_wrap) still apply to the right-hand side."""
+
+        class Inner(CBORModel):
+            v: Annotated[int, CBORField(key=0)]
+
+        class Wrapper(CBORModel):
+            cbor_config = CBORConfig(named_keys=True)
+            tagged: Annotated[bytes, CBORField(key=0, tag=24)]
+            wrapped: Annotated[Inner, CBORField(key=1, bstr_wrap=True)]
+            tagged_wrapped: Annotated[
+                int,
+                CBORField(key=2, bstr_wrap=True, tag=1001),
+            ]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Wrapper)
+
+        expected = """Inner = {
+    0: int,  ; v
+}
+
+Wrapper_tagged = 0
+Wrapper_wrapped = 1
+Wrapper_tagged_wrapped = 2
+
+Wrapper = {
+    Wrapper_tagged: #6.24(bstr),
+    Wrapper_wrapped: bstr .cbor Inner,
+    Wrapper_tagged_wrapped: #6.1001(bstr .cbor int)
+}"""
+        assert cddl == expected
+
+    def test_string_keys_unchanged_when_named_keys_enabled(self) -> None:
+        """String keys are not indirected through definitions and emit no block."""
+
+        class StrOnly(CBORModel):
+            cbor_config = CBORConfig(named_keys=True)
+            alpha: Annotated[str, CBORField(key="a")]
+            beta: Annotated[int, CBORField(key="b")]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(StrOnly)
+
+        expected = """StrOnly = {
+    a: tstr,  ; alpha,
+    b: int,  ; beta
+}"""
+        assert cddl == expected
+
+    def test_array_encoding_ignores_named_keys(self) -> None:
+        """``named_keys`` is silently ignored for array-encoded models."""
+
+        class Point(CBORModel):
+            cbor_config = CBORConfig(encoding="array", named_keys=True)
+            x: Annotated[float, CBORField(index=0)]
+            y: Annotated[float, CBORField(index=1)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Point)
+
+        expected = """Point = [
+    x: float,
+    y: float
+]"""
+        assert cddl == expected
+
+    def test_override_name_used_in_definition(self) -> None:
+        """``override_name`` is honored both in definitions and references."""
+
+        class Product(CBORModel):
+            cbor_config = CBORConfig(named_keys=True)
+            internal_id: Annotated[
+                str,
+                CBORField(key=0, override_name="product_id"),
+            ]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Product)
+
+        expected = """Product_product_id = 0
+
+Product = {
+    Product_product_id: tstr
+}"""
+        assert cddl == expected

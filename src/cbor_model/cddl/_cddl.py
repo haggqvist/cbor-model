@@ -122,8 +122,37 @@ class CDDLGenerator:
             fields_str = ",\n    ".join(fields)
             struct_def = f"{model.__name__} = {{\n    {fields_str}\n}}"
 
-        all_defs = enum_defs + dep_defs
+        key_defs = (
+            [d] if (d := self._generate_key_definitions(model)) else []
+        )
+
+        all_defs = enum_defs + dep_defs + key_defs
         return "\n\n".join([*all_defs, struct_def]) if all_defs else struct_def
+
+    def _generate_key_definitions[T: CBORModel](self, model: type[T]) -> str:
+        """Generate the per-model integer-key constant block.
+
+        Returns an empty string when the model is not map-encoded, has
+        ``named_keys`` disabled, or has no integer-keyed fields.
+        """
+        config = model.cbor_config
+        if config.encoding != "map" or not config.named_keys:
+            return ""
+
+        entries: list[tuple[int, str]] = []
+        for field_name, _, cbor_field in self._iter_cbor_fields(model):
+            if isinstance(cbor_field.key, int):
+                display_name = cbor_field.override_name or field_name
+                entries.append((cbor_field.key, display_name))
+
+        if not entries:
+            return ""
+
+        entries.sort(key=lambda item: item[0])
+        return "\n".join(
+            f"{model.__name__}_{display_name} = {key}"
+            for key, display_name in entries
+        )
 
     def _iter_cbor_fields(
         self,
@@ -170,6 +199,7 @@ class CDDLGenerator:
                     field_info,
                     cbor_field,
                     model.cbor_config,
+                    model_name=model.__name__,
                 ),
             )
             for field_name, field_info, cbor_field in self._iter_cbor_fields(model)

@@ -24,6 +24,7 @@ class FieldProcessor:
         field_info: FieldInfo,
         cbor_field: CBORField,
         config: CBORConfig,
+        model_name: str | None = None,
     ) -> str:
         """Generate CDDL field definition from Pydantic FieldInfo and CBORField."""
         if field_info.annotation is None:
@@ -48,4 +49,10 @@ class FieldProcessor:
 
         if config.encoding == "array":
             return f"{optional_prefix}{display_name}: {cddl_type}"
+        if (
+            config.named_keys
+            and isinstance(key, int)
+            and model_name is not None
+        ):
+            return f"{optional_prefix}{model_name}_{display_name}: {cddl_type}"
         return f"{optional_prefix}{key}: {cddl_type},  ; {display_name}"

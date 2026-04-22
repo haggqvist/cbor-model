@@ -17,6 +17,12 @@ class CBORConfig:
             `None` disables tagging (default).
         canonical: Use canonical CBOR encoding (deterministic key ordering
             and minimal integer encoding). Defaults to `False`.
+        named_keys: When `True` and `encoding == "map"`,
+            :class:`~cbor_model.cddl.CDDLGenerator` emits per-model integer
+            key definitions (e.g. ``ModelName_field = 0``) and references
+            them in the map body instead of inlining bare integer literals.
+            Has no effect on CBOR (de)serialization and is ignored for
+            array-encoded models. Defaults to `False`.
         encoders: Custom encoders for types not natively supported by
             cbor2. Keys are Python types; values are callables that
             convert an instance of that type to a cbor2-encodable value
@@ -33,6 +39,12 @@ class CBORConfig:
 
     canonical: bool = False
     """Whether to use canonical CBOR encoding. Defaults to `False`."""
+
+    named_keys: bool = False
+    """When True and ``encoding == "map"``, :class:`CDDLGenerator` emits
+    per-model integer key definitions (e.g. ``ModelName_field = 0``) and
+    references them in the map body instead of inlining bare integer
+    literals. Ignored for array encoding. Defaults to ``False``."""
 
     encoders: CBOREncoders = field(default_factory=dict)
     """Custom encoders for types that are not natively supported by cbor2.
