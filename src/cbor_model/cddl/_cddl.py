@@ -65,6 +65,7 @@ class CDDLGenerator:
         """
         self._generated_types: set[type] = set()
         self._generated_enums: set[type[Enum]] = set()
+        self._generated_aliases: set[str] = set()
         self._type_converter = type_converter or TypeConverter()
         self._field_processor = FieldProcessor(self._type_converter)
 
@@ -72,6 +73,8 @@ class CDDLGenerator:
         """Reset the generator state to allow for fresh generation."""
         self._generated_types.clear()
         self._generated_enums.clear()
+        self._generated_aliases.clear()
+        self._type_converter.reset_alias_state()
 
     def generate(
         self,
@@ -125,9 +128,20 @@ class CDDLGenerator:
         else:
             struct_def = f"{model.__name__} = {{\n    {fields_str}\n}}"
 
+        # Drain any PEP 695 type aliases that the field expansion just
+        # registered. New aliases are emitted once, before this struct so the
+        # body of a `type X = ...` declaration becomes a top-level CDDL rule
+        # rather than being inlined into the parent field type.
+        alias_defs: list[str] = []
+        for name, body in self._type_converter.drain_alias_definitions().items():
+            if name in self._generated_aliases:
+                continue
+            self._generated_aliases.add(name)
+            alias_defs.append(f"{name} = {body}")
+
         key_defs = [d] if (d := self._generate_key_definitions(model)) else []
 
-        all_defs = enum_defs + dep_defs + key_defs
+        all_defs = enum_defs + dep_defs + alias_defs + key_defs
         return "\n\n".join([*all_defs, struct_def]) if all_defs else struct_def
 
     def _format_field_lines(self, fields: list[ProcessedField]) -> list[str]:
