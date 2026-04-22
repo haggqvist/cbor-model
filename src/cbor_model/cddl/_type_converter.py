@@ -76,12 +76,13 @@ class RangeConstraint:
                 if self.min_length == self.max_length
                 else f"({self.min_length}..{self.max_length})"
             )
-        elif self.min_length is not None:
-            constraint = f"{self.min_length}.."
-        elif self.max_length is not None:
-            constraint = f"..{self.max_length}"
         else:
-            return ""
+            err = (
+                "RFC 8610 requires .size constraints for strings and bytes "
+                "to specify both min_length and max_length, or an exact size "
+                "(min_length == max_length)."
+            )
+            raise ValueError(err)
         return f".size {constraint}"
 
     def to_list(self, cddl_type: str) -> str:

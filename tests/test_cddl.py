@@ -130,14 +130,10 @@ Team = {{
         ("min_length", "max_length", "expected_type"),
         [
             (None, None, "tstr"),
-            (5, None, "tstr .size 5.."),
-            (None, 10, "tstr .size ..10"),
             (1, 50, "tstr .size (1..50)"),
         ],
         ids=[
             "no_constraints",
-            "min_length_only",
-            "max_length_only",
             "min_and_max_length",
         ],
     )
@@ -167,18 +163,46 @@ Person = {{
         assert cddl == expected
 
     @pytest.mark.parametrize(
+        ("min_length", "max_length"),
+        [
+            (5, None),
+            (None, 10),
+        ],
+        ids=[
+            "min_length_only",
+            "max_length_only",
+        ],
+    )
+    def test_str_with_one_sided_constraints_raises(
+        self,
+        min_length: int | None,
+        max_length: int | None,
+    ) -> None:
+        """Test RFC 8610 compliance for string size constraints."""
+
+        class Person(CBORModel):
+            name: Annotated[
+                str,
+                CBORField(key=0),
+                Field(min_length=min_length, max_length=max_length),
+            ]
+
+        generator = CDDLGenerator()
+        with pytest.raises(
+            ValueError,
+            match=r"RFC 8610 requires \.size constraints",
+        ):
+            generator.generate(Person)
+
+    @pytest.mark.parametrize(
         ("min_length", "max_length", "expected_type"),
         [
             (None, None, "bstr"),
-            (5, None, "bstr .size 5.."),
-            (None, 10, "bstr .size ..10"),
             (1, 50, "bstr .size (1..50)"),
             (32, 32, "bstr .size 32"),
         ],
         ids=[
             "no_constraints",
-            "min_length_only",
-            "max_length_only",
             "min_and_max_length",
             "exact_length",
         ],
@@ -209,17 +233,45 @@ Packet = {{
         assert cddl == expected
 
     @pytest.mark.parametrize(
+        ("min_length", "max_length"),
+        [
+            (5, None),
+            (None, 10),
+        ],
+        ids=[
+            "min_length_only",
+            "max_length_only",
+        ],
+    )
+    def test_bytes_with_one_sided_constraints_raises(
+        self,
+        min_length: int | None,
+        max_length: int | None,
+    ) -> None:
+        """Test RFC 8610 compliance for byte string size constraints."""
+
+        class Packet(CBORModel):
+            data: Annotated[
+                bytes,
+                CBORField(key=0),
+                Field(min_length=min_length, max_length=max_length),
+            ]
+
+        generator = CDDLGenerator()
+        with pytest.raises(
+            ValueError,
+            match=r"RFC 8610 requires \.size constraints",
+        ):
+            generator.generate(Packet)
+
+    @pytest.mark.parametrize(
         ("min_length", "max_length", "expected_type"),
         [
             (None, None, "tstr"),
-            (5, None, "tstr .size 5.."),
-            (None, 10, "tstr .size ..10"),
             (1, 50, "tstr .size (1..50)"),
         ],
         ids=[
             "no_constraints",
-            "min_length_only",
-            "max_length_only",
             "min_and_max_length",
         ],
     )
@@ -247,6 +299,38 @@ Person = {{
     ? person_name: {expected_type}
 }}"""
         assert cddl == expected
+
+    @pytest.mark.parametrize(
+        ("min_length", "max_length"),
+        [
+            (5, None),
+            (None, 10),
+        ],
+        ids=[
+            "min_length_only",
+            "max_length_only",
+        ],
+    )
+    def test_optional_str_with_one_sided_constraints_raises(
+        self,
+        min_length: int | None,
+        max_length: int | None,
+    ) -> None:
+        """Test RFC 8610 compliance for optional string size constraints."""
+
+        class Person(CBORModel):
+            name: Annotated[
+                str | None,
+                CBORField(key=0),
+                Field(min_length=min_length, max_length=max_length),
+            ] = None
+
+        generator = CDDLGenerator()
+        with pytest.raises(
+            ValueError,
+            match=r"RFC 8610 requires \.size constraints",
+        ):
+            generator.generate(Person)
 
     def test_nested_models(self) -> None:
         """Test CDDL generation with nested CBORModel classes."""
@@ -1117,7 +1201,8 @@ class TestBstrWrapCDDL:
     def test_bstr_wrap_override_type_skips_cbor_annotation(self) -> None:
         class Wrapper(CBORModel):
             payload: Annotated[
-                int, CBORField(key=0, bstr_wrap=True, override_type="my-type")
+                int,
+                CBORField(key=0, bstr_wrap=True, override_type="my-type"),
             ]
 
         generator = CDDLGenerator()
