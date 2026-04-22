@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic.fields import FieldInfo
 
@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from cbor_model import CBORField
+
+
+type EnumStyle = Literal["union", "choices"]
 
 
 class CDDLGenerator:
@@ -54,6 +57,8 @@ class CDDLGenerator:
     def __init__(
         self,
         type_converter: TypeConverter | None = None,
+        *,
+        enum_style: EnumStyle = "union",
     ) -> None:
         """Initialize the generator.
 
@@ -61,12 +66,18 @@ class CDDLGenerator:
             type_converter: Custom :class:`TypeConverter` instance used to map
                 Python types to CDDL type names.  When ``None``, a default
                 :class:`TypeConverter` is used.
+            enum_style: Controls how :class:`~enum.Enum` types are emitted.
+                ``"union"`` (default) produces a CDDL control operator union
+                ``&(...)``; ``"choices"`` produces individual value constants
+                with ``/=`` choice assignments, as expected by tools like
+                zcbor.
 
         """
         self._generated_types: set[type] = set()
         self._generated_enums: set[type[Enum]] = set()
         self._type_converter = type_converter or TypeConverter()
         self._field_processor = FieldProcessor(self._type_converter)
+        self._enum_style: EnumStyle = enum_style
 
     def reset(self) -> None:
         """Reset the generator state to allow for fresh generation."""
@@ -231,6 +242,18 @@ class CDDLGenerator:
             return ""
 
         self._generated_enums.add(enum_type)
+
+        if self._enum_style == "choices":
+            prefix = to_snake(enum_type.__name__)
+            member_defs = "\n".join(
+                f"{prefix}_{member.name.lower()} = {member.value}"
+                for member in enum_type
+            )
+            choice_defs = "\n".join(
+                f"{enum_type.__name__} /= {prefix}_{member.name.lower()}"
+                for member in enum_type
+            )
+            return f"{member_defs}\n\n{choice_defs}"
 
         members = (f"    {member.name}: {member.value}" for member in enum_type)
         members_str = ",\n".join(members)

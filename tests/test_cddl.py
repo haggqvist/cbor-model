@@ -454,6 +454,38 @@ Palette = {
 }"""
         assert cddl == expected
 
+    def test_enum_generation_choices(self) -> None:
+        """Test CDDL generation for IntEnum types with choices style."""
+
+        class Color(IntEnum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+
+        class Palette(CBORModel):
+            primary: Annotated[Color, CBORField(key=0)]
+            secondary: Annotated[Color | None, CBORField(key=1)] = None
+
+        generator = CDDLGenerator(enum_style="choices")
+        cddl = generator.generate(Palette)
+
+        expected = """color_red = 1
+color_green = 2
+color_blue = 3
+
+Color /= color_red
+Color /= color_green
+Color /= color_blue
+
+palette_primary = 0
+palette_secondary = 1
+
+Palette = {
+    palette_primary: Color,
+    ? palette_secondary: Color
+}"""
+        assert cddl == expected
+
     def test_dict_field(self) -> None:
         """Test CDDL generation for dict fields."""
 
