@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/haggqvist/cbor-model/compare/v0.3.0...v0.4.0) (2026-04-22)
+
+
+### Features
+
+* add aliases for common int types ([cc1903c](https://github.com/haggqvist/cbor-model/commit/cc1903cccc44dd5cf9cdc1ea9a23b60aa964668d))
+* produce CDDL for enums as choice ([49137ad](https://github.com/haggqvist/cbor-model/commit/49137ad2c31426bedc36d4e763f1e5e606adef99))
+
+
+### Bug Fixes
+
+* emit precise RFC 8610 integer bounds ([33c9a03](https://github.com/haggqvist/cbor-model/commit/33c9a0346e64a31dcc467e87645f9e8118f967df))
+* enforce RFC 8610 .size bounds for strings and bytes ([c5defb9](https://github.com/haggqvist/cbor-model/commit/c5defb9b742bb63f35fe6052f0d78b062359e8b5))
+
 ## [0.3.0](https://github.com/haggqvist/cbor-model/compare/v0.2.0...v0.3.0) (2026-04-22)
 
 
