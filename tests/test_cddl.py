@@ -1270,6 +1270,130 @@ class TestBstrWrapCDDL:
         assert "bstr .cbor" not in cddl
 
 
+class TestCDDLModelTag:
+    """Test CDDL generation for models configured with ``CBORConfig.tag``."""
+
+    def test_tagged_model(self) -> None:
+        """Model with a CBOR tag emits a tagged CDDL definition."""
+
+        class Tagged(CBORModel):
+            cbor_config = CBORConfig(tag=42)
+            value: Annotated[int, CBORField(key=0)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Tagged)
+
+        expected = """tagged_value = 0
+
+Tagged = #6.42({
+    tagged_value: int
+})"""
+        assert cddl == expected
+
+    def test_tagged_model_reference_uses_plain_name(self) -> None:
+        """A reference to a tagged model uses the plain name; the tag lives in the definition."""
+
+        class Inner(CBORModel):
+            cbor_config = CBORConfig(tag=121)
+            value: Annotated[int, CBORField(key=0)]
+
+        class Outer(CBORModel):
+            inner: Annotated[Inner, CBORField(key=0)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Outer)
+
+        expected = """inner_value = 0
+
+Inner = #6.121({
+    inner_value: int
+})
+
+outer_inner = 0
+
+Outer = {
+    outer_inner: Inner
+}"""
+        assert cddl == expected
+
+    def test_tagged_models_in_union_each_wrapped(self) -> None:
+        """Each tagged variant in a union is wrapped with its own tag."""
+
+        class TransportA(CBORModel):
+            cbor_config = CBORConfig(tag=121)
+            protocols: Annotated[
+                list[int],
+                CBORField(key=0),
+                Field(min_length=1, max_length=4),
+            ]
+
+        class TransportB(CBORModel):
+            cbor_config = CBORConfig(tag=122)
+            protocols: Annotated[
+                list[int],
+                CBORField(key=0),
+                Field(min_length=1, max_length=2),
+            ]
+
+        class Cfg(CBORModel):
+            version: Annotated[int, CBORField(key=0), Field(ge=0)]
+            transports: Annotated[
+                list[TransportA | TransportB],
+                CBORField(key=1),
+                Field(min_length=1, max_length=2),
+            ]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Cfg)
+
+        assert "cfg_transports: [1*2 TransportA / TransportB]" in cddl
+
+    def test_tagged_model_in_optional_field(self) -> None:
+        """Optional tagged-model fields still emit the tag wrapper."""
+
+        class Inner(CBORModel):
+            cbor_config = CBORConfig(tag=200)
+            value: Annotated[int, CBORField(key=0)]
+
+        class Outer(CBORModel):
+            inner: Annotated[Inner | None, CBORField(key=0)] = None
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Outer)
+
+        assert "? outer_inner: Inner" in cddl
+
+    def test_tagged_model_with_bstr_wrap(self) -> None:
+        """``bstr_wrap`` composes with the model-level tag wrapper."""
+
+        class Inner(CBORModel):
+            cbor_config = CBORConfig(tag=24)
+            value: Annotated[int, CBORField(key=0)]
+
+        class Outer(CBORModel):
+            inner: Annotated[Inner, CBORField(key=0, bstr_wrap=True)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Outer)
+
+        assert "outer_inner: bstr .cbor Inner" in cddl
+
+    def test_field_tag_composes_with_model_tag(self) -> None:
+        """A field-level tag wraps the (already model-tagged) reference."""
+
+        class Inner(CBORModel):
+            cbor_config = CBORConfig(tag=24)
+            value: Annotated[int, CBORField(key=0)]
+
+        class Outer(CBORModel):
+            inner: Annotated[Inner, CBORField(key=0, tag=99)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Outer)
+
+        assert "outer_inner: #6.99(Inner)" in cddl
+
+
 class TestCDDLNamedKeysAlwaysOn:
     """Test that map-encoded models always emit a named-key constant block."""
 
