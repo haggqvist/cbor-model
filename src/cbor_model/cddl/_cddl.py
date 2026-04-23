@@ -132,9 +132,12 @@ class CDDLGenerator:
         fields = self._generate_fields(model)
         fields_str = "\n    ".join(self._format_field_lines(fields))
         if model.cbor_config.encoding == "array":
-            struct_def = f"{model.__name__} = [\n    {fields_str}\n]"
+            body = f"[\n    {fields_str}\n]"
         else:
-            struct_def = f"{model.__name__} = {{\n    {fields_str}\n}}"
+            body = f"{{\n    {fields_str}\n}}"
+        if tag := model.cbor_config.tag:
+            body = f"#6.{tag}({body})"
+        struct_def = f"{model.__name__} = {body}"
 
         key_defs = [d] if (d := self._generate_key_definitions(model)) else []
 

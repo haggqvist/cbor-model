@@ -1273,8 +1273,25 @@ class TestBstrWrapCDDL:
 class TestCDDLModelTag:
     """Test CDDL generation for models configured with ``CBORConfig.tag``."""
 
-    def test_tagged_model_reference_is_wrapped(self) -> None:
-        """A reference to a tagged model is wrapped with ``#6.<tag>(...)``."""
+    def test_tagged_model(self) -> None:
+        """Model with a CBOR tag emits a tagged CDDL definition."""
+
+        class Tagged(CBORModel):
+            cbor_config = CBORConfig(tag=42)
+            value: Annotated[int, CBORField(key=0)]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Tagged)
+
+        expected = """tagged_value = 0
+
+Tagged = #6.42({
+    tagged_value: int
+})"""
+        assert cddl == expected
+
+    def test_tagged_model_reference_uses_plain_name(self) -> None:
+        """A reference to a tagged model uses the plain name; the tag lives in the definition."""
 
         class Inner(CBORModel):
             cbor_config = CBORConfig(tag=121)
@@ -1288,14 +1305,14 @@ class TestCDDLModelTag:
 
         expected = """inner_value = 0
 
-Inner = {
+Inner = #6.121({
     inner_value: int
-}
+})
 
 outer_inner = 0
 
 Outer = {
-    outer_inner: #6.121(Inner)
+    outer_inner: Inner
 }"""
         assert cddl == expected
 
@@ -1329,10 +1346,7 @@ Outer = {
         generator = CDDLGenerator()
         cddl = generator.generate(Cfg)
 
-        assert (
-            "cfg_transports: [1*2 #6.121(TransportA) / #6.122(TransportB)]"
-            in cddl
-        )
+        assert "cfg_transports: [1*2 TransportA / TransportB]" in cddl
 
     def test_tagged_model_in_optional_field(self) -> None:
         """Optional tagged-model fields still emit the tag wrapper."""
@@ -1347,7 +1361,7 @@ Outer = {
         generator = CDDLGenerator()
         cddl = generator.generate(Outer)
 
-        assert "? outer_inner: #6.200(Inner)" in cddl
+        assert "? outer_inner: Inner" in cddl
 
     def test_tagged_model_with_bstr_wrap(self) -> None:
         """``bstr_wrap`` composes with the model-level tag wrapper."""
@@ -1362,7 +1376,7 @@ Outer = {
         generator = CDDLGenerator()
         cddl = generator.generate(Outer)
 
-        assert "outer_inner: bstr .cbor #6.24(Inner)" in cddl
+        assert "outer_inner: bstr .cbor Inner" in cddl
 
     def test_field_tag_composes_with_model_tag(self) -> None:
         """A field-level tag wraps the (already model-tagged) reference."""
@@ -1377,7 +1391,7 @@ Outer = {
         generator = CDDLGenerator()
         cddl = generator.generate(Outer)
 
-        assert "outer_inner: #6.99(#6.24(Inner))" in cddl
+        assert "outer_inner: #6.99(Inner)" in cddl
 
 
 class TestCDDLNamedKeysAlwaysOn:
