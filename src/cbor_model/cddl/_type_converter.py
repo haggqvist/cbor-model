@@ -9,6 +9,7 @@ from uuid import UUID
 
 from annotated_types import BaseMetadata, Ge, Gt, Le, Lt, MaxLen, MinLen
 
+from cbor_model._model import CBORModel
 from cbor_model._util import is_optional, is_union_type
 
 if TYPE_CHECKING:
@@ -243,7 +244,16 @@ class TypeConverter:
                 annotation,
             )
 
-        return annotation.__name__
+        return self._format_named_type(annotation)
+
+    def _format_named_type(self, annotation: type[Any]) -> str:
+        """Render a named type reference, wrapping CBOR-tagged models."""
+        name = annotation.__name__
+        if isinstance(annotation, type) and issubclass(annotation, CBORModel):
+            tag = annotation.cbor_config.tag
+            if tag is not None:
+                return f"#6.{tag}({name})"
+        return name
 
     def _convert_literal(
         self,
