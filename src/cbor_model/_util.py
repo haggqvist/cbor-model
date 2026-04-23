@@ -26,6 +26,13 @@ def is_optional(annotation: Any) -> bool:
     return is_union_type(annotation) and NoneType in get_args(annotation)
 
 
+def extract_type_aliases(annotation: Any) -> list[TypeAliasType]:
+    """Return all PEP 695 TypeAliasType instances found directly in ``annotation``."""
+    if is_type_alias(annotation):
+        return [annotation]
+    return [a for arg in get_args(annotation) for a in extract_type_aliases(arg)]
+
+
 def is_type_of[T](annotation: Any, target: type[T]) -> TypeGuard[type[T]]:
     return isinstance(annotation, type) and issubclass(annotation, target)
 

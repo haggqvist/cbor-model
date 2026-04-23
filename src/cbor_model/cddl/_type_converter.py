@@ -5,22 +5,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from types import NoneType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Literal,
     Self,
-    TypeAliasType,
     get_args,
     get_origin,
 )
 from uuid import UUID
 
 from annotated_types import BaseMetadata, Ge, Gt, Le, Lt, MaxLen, MinLen
+from pydantic.fields import FieldInfo
 
-from cbor_model._util import is_optional, is_type_alias, is_union_type
-
-if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
+from cbor_model._util import is_optional, is_union_type
 
 
 def numeric_modifier_from_metadata(metadata: list[BaseMetadata]) -> str:
@@ -228,14 +224,15 @@ class TypeConverter:
         type_map: dict[type, str] | None = None,
     ) -> None:
         self.type_map = type_map or DEFAULT_TYPE_MAP.copy()
-        self._alias_definitions: dict[str, str] = {}
-        self._aliases_in_progress: set[str] = set()
 
-    def convert(self, annotation: type[Any], field_info: FieldInfo) -> str:
+    def convert(
+        self,
+        annotation: type[Any],
+        field_info: FieldInfo | None = None,
+    ) -> str:
         """Convert a Python type annotation to CDDL type string."""
-        if is_type_alias(annotation):
-            return self._convert_type_alias(annotation, field_info)
-
+        if field_info is None:
+            field_info = FieldInfo()
         origin = get_origin(annotation)
         args = get_args(annotation)
 
@@ -257,48 +254,6 @@ class TypeConverter:
             )
 
         return annotation.__name__
-
-    def drain_alias_definitions(self) -> dict[str, str]:
-        """Return and clear aliases registered since the last drain.
-
-        The CDDL generator drains pending aliases after rendering the parent
-        struct's fields and emits a top-level ``<Name> = <body>`` rule for each
-        previously-unseen alias. The mapping is insertion-ordered so callers
-        can rely on declaration order being preserved.
-        """
-        items = dict(self._alias_definitions)
-        self._alias_definitions.clear()
-        return items
-
-    def reset_alias_state(self) -> None:
-        """Drop any pending alias bookkeeping (used by ``CDDLGenerator.reset``)."""
-        self._alias_definitions.clear()
-        self._aliases_in_progress.clear()
-
-    def _convert_type_alias(
-        self,
-        annotation: TypeAliasType,
-        field_info: FieldInfo,
-    ) -> str:
-        """Convert a PEP 695 type alias and register a top-level CDDL rule.
-
-        Recursive aliases are protected against unbounded recursion: while an
-        alias body is being expanded, its name is held in
-        :attr:`_aliases_in_progress` and any nested reference simply returns
-        the name without re-entering the body.
-        """
-        name = annotation.__name__
-        if name in self._aliases_in_progress or name in self._alias_definitions:
-            return name
-
-        self._aliases_in_progress.add(name)
-        try:
-            body = self.convert(annotation.__value__, field_info)
-        finally:
-            self._aliases_in_progress.discard(name)
-
-        self._alias_definitions[name] = body
-        return name
 
     def _convert_literal(
         self,

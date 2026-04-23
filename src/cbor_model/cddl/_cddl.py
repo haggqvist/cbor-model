@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 from pydantic.fields import FieldInfo
 
 from cbor_model import CBORModel
-from cbor_model._util import extract_types_matching
+from cbor_model._util import extract_type_aliases, extract_types_matching
 
 from ._field_processor import FieldProcessor, ProcessedField
 from ._naming import to_snake
@@ -14,6 +14,7 @@ from ._type_converter import TypeConverter
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing import TypeAliasType
 
     from cbor_model import CBORField
 
@@ -85,7 +86,6 @@ class CDDLGenerator:
         self._generated_types.clear()
         self._generated_enums.clear()
         self._generated_aliases.clear()
-        self._type_converter.reset_alias_state()
 
     def generate(
         self,
@@ -142,21 +142,36 @@ class CDDLGenerator:
             body = f"#6.{tag}({body})"
         struct_def = f"{model.__name__} = {body}"
 
-        # Drain any PEP 695 type aliases that the field expansion just
-        # registered. New aliases are emitted once, before this struct so the
-        # body of a `type X = ...` declaration becomes a top-level CDDL rule
-        # rather than being inlined into the parent field type.
-        alias_defs: list[str] = []
-        for name, body in self._type_converter.drain_alias_definitions().items():
-            if name in self._generated_aliases:
-                continue
-            self._generated_aliases.add(name)
-            alias_defs.append(f"{name} = {body}")
+        alias_defs = [
+            d
+            for _, fi, _ in self._iter_cbor_fields(model)
+            if fi.annotation is not None
+            for alias in extract_type_aliases(fi.annotation)
+            if (d := self._generate_alias(alias))
+        ]
 
         key_defs = [d] if (d := self._generate_key_definitions(model)) else []
 
         all_defs = enum_defs + dep_defs + alias_defs + key_defs
         return "\n\n".join([*all_defs, struct_def]) if all_defs else struct_def
+
+    def _generate_alias(self, alias: TypeAliasType) -> str:
+        """Generate a top-level CDDL rule for a PEP 695 type alias.
+
+        Emits nested aliases depth-first so each is defined before it is
+        referenced. Already-seen aliases are skipped.
+        """
+        name = alias.__name__
+        if name in self._generated_aliases:
+            return ""
+        self._generated_aliases.add(name)
+        nested = [
+            d
+            for a in extract_type_aliases(alias.__value__)
+            if (d := self._generate_alias(a))
+        ]
+        body = self._type_converter.convert(alias.__value__)
+        return "\n\n".join([*nested, f"{name} = {body}"])
 
     def _format_field_lines(self, fields: list[ProcessedField]) -> list[str]:
         """Add field separators while keeping comment formatting consistent."""
