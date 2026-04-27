@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/haggqvist/cbor-model/compare/v0.4.1...v0.5.0) (2026-04-27)
+
+
+### Features
+
+* range constraints for maps ([a6350b3](https://github.com/haggqvist/cbor-model/commit/a6350b3201ff908a0812d328e8ed94391b5130f3))
+
+
+### Bug Fixes
+
+* infer cddl map constraints from type ([85556b4](https://github.com/haggqvist/cbor-model/commit/85556b4f00665a240661526721c272689c05e92f))
+* raise error on invalid RangeConstraint ([bc09f59](https://github.com/haggqvist/cbor-model/commit/bc09f59a60bf32d839d5e35eda795524ee668f08))
+
 ## [0.4.1](https://github.com/haggqvist/cbor-model/compare/v0.4.0...v0.4.1) (2026-04-23)
 
 
