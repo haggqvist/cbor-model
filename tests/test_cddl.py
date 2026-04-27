@@ -127,6 +127,22 @@ Team = {{
 }}"""
         assert cddl == expected
 
+    def test_list_with_invalid_constraints_raises(self) -> None:
+        """List bounds must not be contradictory."""
+
+        class Team(CBORModel):
+            members: Annotated[
+                list[str],
+                CBORField(key=0),
+                Field(min_length=5, max_length=3),
+            ]
+
+        with pytest.raises(
+            ValueError,
+            match=r"Invalid field Team\.members: min_length cannot be greater than max_length",
+        ):
+            CDDLGenerator().generate(Team)
+
     @pytest.mark.parametrize(
         ("min_length", "max_length", "expected_type"),
         [
@@ -194,6 +210,22 @@ Person = {{
             match=r"RFC 8610 requires \.size constraints",
         ):
             generator.generate(Person)
+
+    def test_str_with_invalid_constraints_raises(self) -> None:
+        """String bounds must not be contradictory."""
+
+        class Person(CBORModel):
+            name: Annotated[
+                str,
+                CBORField(key=0),
+                Field(min_length=5, max_length=3),
+            ]
+
+        with pytest.raises(
+            ValueError,
+            match=r"Invalid field Person\.name: min_length cannot be greater than max_length",
+        ):
+            CDDLGenerator().generate(Person)
 
     @pytest.mark.parametrize(
         ("min_length", "max_length", "expected_type"),
@@ -264,6 +296,22 @@ Packet = {{
             match=r"RFC 8610 requires \.size constraints",
         ):
             generator.generate(Packet)
+
+    def test_bytes_with_invalid_constraints_raises(self) -> None:
+        """Byte-string bounds must not be contradictory."""
+
+        class Packet(CBORModel):
+            data: Annotated[
+                bytes,
+                CBORField(key=0),
+                Field(min_length=5, max_length=3),
+            ]
+
+        with pytest.raises(
+            ValueError,
+            match=r"Invalid field Packet\.data: min_length cannot be greater than max_length",
+        ):
+            CDDLGenerator().generate(Packet)
 
     @pytest.mark.parametrize(
         ("min_length", "max_length", "expected_type"),
@@ -729,6 +777,22 @@ Config = {{
     config_data: {expected_type}
 }}"""
         assert cddl == expected
+
+    def test_dict_with_invalid_constraints_raises(self) -> None:
+        """Map bounds must not be contradictory."""
+
+        class Config(CBORModel):
+            data: Annotated[
+                dict[str, Any],
+                CBORField(key=0),
+                Field(min_length=5, max_length=3),
+            ]
+
+        with pytest.raises(
+            ValueError,
+            match=r"Invalid field Config\.data: min_length cannot be greater than max_length",
+        ):
+            CDDLGenerator().generate(Config)
 
 
 class TestCDDLUtilities:

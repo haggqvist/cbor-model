@@ -159,12 +159,22 @@ class NumericConstraint:
         return ".le" if self.upper is not None and self.upper[1] else ".lt"
 
 
-@dataclass
+@dataclass(frozen=True)
 class RangeConstraint:
     """Represents min/max length constraints for CDDL types."""
 
     min_length: int | None = None
     max_length: int | None = None
+
+    def __post_init__(self) -> None:
+        """Reject contradictory length bounds at construction time."""
+        if (
+            self.min_length is not None
+            and self.max_length is not None
+            and self.min_length > self.max_length
+        ):
+            err = "min_length cannot be greater than max_length"
+            raise ValueError(err)
 
     @classmethod
     def from_metadata(
@@ -188,6 +198,7 @@ class RangeConstraint:
         """Convert to CDDL size constraint string."""
         if not self:
             return ""
+
         if self.min_length is not None and self.max_length is not None:
             constraint = (
                 str(self.min_length)
@@ -330,7 +341,10 @@ class TypeConverter:
         """Convert dict type to CDDL map syntax."""
         constraints = RangeConstraint.from_metadata(field_info.metadata)
         if constraints.max_length is None and len(args) > 0:
-            constraints.max_length = _type_size(args[0])
+            constraints = RangeConstraint(
+                min_length=constraints.min_length,
+                max_length=_type_size(args[0]),
+            )
 
         key_type = self.convert(args[0], field_info) if len(args) > 0 else "any"
         val_type = self.convert(args[1], field_info) if len(args) > 1 else "any"

@@ -260,6 +260,7 @@ class CDDLGenerator:
                     field_info,
                     cbor_field,
                     model.cbor_config,
+                    model.__name__,
                     model_prefix=model_prefix,
                 ),
             )

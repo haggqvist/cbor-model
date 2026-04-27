@@ -39,6 +39,7 @@ class FieldProcessor:
         field_info: FieldInfo,
         cbor_field: CBORField,
         config: CBORConfig,
+        model_name: str,
         model_prefix: str | None = None,
     ) -> ProcessedField:
         """Generate CDDL field definition from Pydantic FieldInfo and CBORField."""
@@ -50,10 +51,14 @@ class FieldProcessor:
         optional = cbor_field.optional or is_optional(field_info.annotation)
         optional_prefix = "? " if optional else ""
 
-        cddl_type = cbor_field.override_type or self.type_converter.convert(
-            field_info.annotation,
-            field_info,
-        )
+        try:
+            cddl_type = cbor_field.override_type or self.type_converter.convert(
+                field_info.annotation,
+                field_info,
+            )
+        except ValueError as exc:
+            err = f"Invalid field {model_name}.{field_name}: {exc}"
+            raise ValueError(err) from exc
 
         if cbor_field.bstr_wrap and not cbor_field.override_type:
             cddl_type = f"bstr .cbor {cddl_type}"

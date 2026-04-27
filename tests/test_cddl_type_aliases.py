@@ -17,6 +17,7 @@ The contract under test:
 from enum import IntEnum
 from typing import Annotated, Literal
 
+import pytest
 from pydantic import Field
 
 from cbor_model import CBORConfig, CBORField, CBORModel, CDDLGenerator
@@ -155,6 +156,21 @@ class TestTypeAliasDicts:
 
         assert 'ConfigKey = "foo" / "bar" / "baz"' in cddl
         assert "parent_entries: {1*2 ConfigKey => tstr}" in cddl
+
+    def test_dict_key_alias_invalid_inferred_bounds_raise(self) -> None:
+        class Parent(CBORModel):
+            cbor_config = CBORConfig(encoding="map", canonical=True)
+            entries: Annotated[
+                dict[ConfigKey, str],
+                CBORField(key=0),
+                Field(min_length=4),
+            ]
+
+        with pytest.raises(
+            ValueError,
+            match=r"Invalid field Parent\.entries: min_length cannot be greater than max_length",
+        ):
+            CDDLGenerator().generate(Parent)
 
 
 class TestBackCompat:
