@@ -631,6 +631,46 @@ Config = {
 }"""
         assert cddl == expected
 
+    @pytest.mark.parametrize(
+        ("min_length", "max_length", "expected_type"),
+        [
+            (None, None, "{* tstr => any}"),
+            (1, None, "{+ tstr => any}"),
+            (None, 5, "{*5 tstr => any}"),
+            (1, 5, "{1*5 tstr => any}"),
+        ],
+        ids=[
+            "no_constraints",
+            "min_length_only",
+            "max_length_only",
+            "min_and_max_length",
+        ],
+    )
+    def test_dict_with_constraints(
+        self,
+        min_length: int | None,
+        max_length: int | None,
+        expected_type: str,
+    ) -> None:
+        """Test CDDL generation with dict fields having entry-count constraints."""
+
+        class Config(CBORModel):
+            data: Annotated[
+                dict[str, Any],
+                CBORField(key=0),
+                Field(min_length=min_length, max_length=max_length),
+            ]
+
+        generator = CDDLGenerator()
+        cddl = generator.generate(Config)
+
+        expected = f"""config_data = 0
+
+Config = {{
+    config_data: {expected_type}
+}}"""
+        assert cddl == expected
+
 
 class TestCDDLUtilities:
     """Test utility functions used by CDDL generator."""

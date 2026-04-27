@@ -203,6 +203,20 @@ class RangeConstraint:
             constraint = "*"
         return f"[{constraint} {cddl_type}]"
 
+    def to_map(self, key_type: str, value_type: str) -> str:
+        """Convert to CDDL map cardinality constraint string."""
+        if self.min_length == 1 and self.max_length is None:
+            constraint = "+"
+        elif self.min_length is not None and self.max_length is not None:
+            constraint = f"{self.min_length}*{self.max_length}"
+        elif self.min_length is not None:
+            constraint = f"{self.min_length}*"
+        elif self.max_length is not None:
+            constraint = f"*{self.max_length}"
+        else:
+            constraint = "*"
+        return f"{{{constraint} {key_type} => {value_type}}}"
+
 
 DEFAULT_TYPE_MAP = {
     str: "tstr",
@@ -300,9 +314,10 @@ class TypeConverter:
         field_info: FieldInfo,
     ) -> str:
         """Convert dict type to CDDL map syntax."""
+        constraints = RangeConstraint.from_metadata(field_info.metadata)
         key_type = self.convert(args[0], field_info) if len(args) > 0 else "any"
         val_type = self.convert(args[1], field_info) if len(args) > 1 else "any"
-        return f"{{* {key_type} => {val_type}}}"
+        return constraints.to_map(key_type, val_type)
 
     def _apply_constraints(
         self,
