@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from types import NoneType
 from typing import (
     Any,
     Literal,
     Self,
+    TypeAliasType,
     get_args,
     get_origin,
 )
@@ -35,6 +37,18 @@ def _is_integral_number(value: Any) -> bool:
 
 def _as_int(value: Any) -> int | None:
     return int(value) if _is_integral_number(value) else None
+
+
+def _type_size(t: type[Enum] | TypeAliasType) -> int | None:
+    """Return inferred cardinality for Enum and PEP 695 alias types."""
+    if isinstance(t, type) and issubclass(t, Enum):
+        return len(t)
+
+    if isinstance(t, TypeAliasType):
+        args = get_args(t.__value__)
+        return len(args) if args else None
+
+    return None
 
 
 @dataclass
@@ -315,6 +329,9 @@ class TypeConverter:
     ) -> str:
         """Convert dict type to CDDL map syntax."""
         constraints = RangeConstraint.from_metadata(field_info.metadata)
+        if constraints.max_length is None and len(args) > 0:
+            constraints.max_length = _type_size(args[0])
+
         key_type = self.convert(args[0], field_info) if len(args) > 0 else "any"
         val_type = self.convert(args[1], field_info) if len(args) > 1 else "any"
         return constraints.to_map(key_type, val_type)

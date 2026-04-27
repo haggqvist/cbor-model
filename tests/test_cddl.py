@@ -631,6 +631,65 @@ Config = {
 }"""
         assert cddl == expected
 
+    def test_dict_field_enum_key_infers_max_length(self) -> None:
+        """Dict key enum cardinality should bound max map entries."""
+
+        class ConfigType(IntEnum):
+            FOO = 1
+            BAR = 2
+            BAZ = 3
+
+        class Config(CBORModel):
+            entries: Annotated[dict[ConfigType, str], CBORField(key=0)]
+
+        generator = CDDLGenerator(enum_style="choices")
+        cddl = generator.generate(Config)
+
+        expected = """config_type_foo = 1
+config_type_bar = 2
+config_type_baz = 3
+
+ConfigType /= config_type_foo
+ConfigType /= config_type_bar
+ConfigType /= config_type_baz
+
+config_entries = 0
+
+Config = {
+    config_entries: {*3 ConfigType => tstr}
+}"""
+        assert cddl == expected
+
+    def test_dict_field_enum_key_respects_explicit_max_length(self) -> None:
+        """Explicit max_length should win over inferred enum cardinality."""
+
+        class ConfigType(IntEnum):
+            FOO = 1
+            BAR = 2
+            BAZ = 3
+
+        class Config(CBORModel):
+            entries: Annotated[
+                dict[ConfigType, str],
+                CBORField(key=0),
+                Field(min_length=1, max_length=2),
+            ]
+
+        cddl = CDDLGenerator().generate(Config)
+
+        expected = """ConfigType = &(
+    FOO: 1,
+    BAR: 2,
+    BAZ: 3
+)
+
+config_entries = 0
+
+Config = {
+    config_entries: {1*2 ConfigType => tstr}
+}"""
+        assert cddl == expected
+
     @pytest.mark.parametrize(
         ("min_length", "max_length", "expected_type"),
         [

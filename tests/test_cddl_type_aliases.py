@@ -1,4 +1,3 @@
-# ruff: noqa: D
 """Tests for PEP 695 ``type X = ...`` alias handling in CDDL generation.
 
 The contract under test:
@@ -16,7 +15,7 @@ The contract under test:
 """
 
 from enum import IntEnum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import Field
 
@@ -47,6 +46,7 @@ class _NetworkInterface(IntEnum):
 
 
 type _NetworksMap = dict[_Network, list[_NetworkInterface]]
+type ConfigKey = Literal["foo", "bar", "baz"]
 
 
 class TestTypeAliasUnions:
@@ -113,7 +113,7 @@ class TestTypeAliasDicts:
 
         cddl = CDDLGenerator().generate(Parent)
 
-        assert "_NetworksMap = {* _Network => [* _NetworkInterface]}" in cddl
+        assert "_NetworksMap = {*2 _Network => [* _NetworkInterface]}" in cddl
         assert "parent_networks: _NetworksMap" in cddl
         # The dict body must NOT also be inlined in the parent field.
         assert "parent_networks: {*" not in cddl
@@ -131,6 +131,30 @@ class TestTypeAliasDicts:
         assert network < alias
         assert network_interface < alias
         assert alias < parent
+
+    def test_dict_key_alias_infers_max_length(self) -> None:
+        class Parent(CBORModel):
+            cbor_config = CBORConfig(encoding="map", canonical=True)
+            entries: Annotated[dict[ConfigKey, str], CBORField(key=0)]
+
+        cddl = CDDLGenerator().generate(Parent)
+
+        assert 'ConfigKey = "foo" / "bar" / "baz"' in cddl
+        assert "parent_entries: {*3 ConfigKey => tstr}" in cddl
+
+    def test_dict_key_alias_explicit_max_length_wins(self) -> None:
+        class Parent(CBORModel):
+            cbor_config = CBORConfig(encoding="map", canonical=True)
+            entries: Annotated[
+                dict[ConfigKey, str],
+                CBORField(key=0),
+                Field(min_length=1, max_length=2),
+            ]
+
+        cddl = CDDLGenerator().generate(Parent)
+
+        assert 'ConfigKey = "foo" / "bar" / "baz"' in cddl
+        assert "parent_entries: {1*2 ConfigKey => tstr}" in cddl
 
 
 class TestBackCompat:
@@ -157,11 +181,11 @@ class TestBackCompat:
 
         cddl = CDDLGenerator().generate(Parent)
         # No top-level alias rule for an anonymous dict.
-        assert "= {* _Network => [* _NetworkInterface]}" not in cddl.replace(
-            "parent_networks: {* _Network => [* _NetworkInterface]}", ""
+        assert "= {*2 _Network => [* _NetworkInterface]}" not in cddl.replace(
+            "parent_networks: {*2 _Network => [* _NetworkInterface]}", ""
         )
         # But the inlined form is still produced for the field itself.
-        assert "parent_networks: {* _Network => [* _NetworkInterface]}" in cddl
+        assert "parent_networks: {*2 _Network => [* _NetworkInterface]}" in cddl
 
 
 class TestReset:
