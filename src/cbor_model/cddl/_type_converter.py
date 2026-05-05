@@ -22,7 +22,19 @@ from pydantic.fields import FieldInfo
 from cbor_model._util import is_optional, is_union_type
 
 
-def numeric_modifier_from_metadata(metadata: list[BaseMetadata]) -> str:
+def type_size(t: type[Enum] | TypeAliasType) -> int | None:
+    """Return inferred cardinality for Enum and PEP 695 alias types."""
+    if isinstance(t, type) and issubclass(t, Enum):
+        return len(t)
+
+    if isinstance(t, TypeAliasType):
+        args = get_args(t.__value__)
+        return len(args) if args else None
+
+    return None
+
+
+def _numeric_modifier_from_metadata(metadata: list[BaseMetadata]) -> str:
     return NumericConstraint.from_metadata(metadata).to_cddl("int")
 
 
@@ -38,18 +50,6 @@ def _is_integral_number(value: Any) -> bool:
 
 def _as_int(value: Any) -> int | None:
     return int(value) if _is_integral_number(value) else None
-
-
-def _type_size(t: type[Enum] | TypeAliasType) -> int | None:
-    """Return inferred cardinality for Enum and PEP 695 alias types."""
-    if isinstance(t, type) and issubclass(t, Enum):
-        return len(t)
-
-    if isinstance(t, TypeAliasType):
-        args = get_args(t.__value__)
-        return len(args) if args else None
-
-    return None
 
 
 @dataclass
@@ -349,7 +349,7 @@ class TypeConverter:
         if constraints.max_length is None and len(args) > 0:
             constraints = RangeConstraint(
                 min_length=constraints.min_length,
-                max_length=_type_size(args[0]),
+                max_length=type_size(args[0]),
             )
 
         key_type = self.convert(args[0], field_info) if len(args) > 0 else "any"
@@ -374,7 +374,7 @@ class TypeConverter:
         metadata = field_info.metadata
 
         if base_type == "int":
-            return numeric_modifier_from_metadata(metadata)
+            return _numeric_modifier_from_metadata(metadata)
 
         if base_type in ("tstr", "bstr") and (
             constraints := RangeConstraint.from_metadata(metadata)
