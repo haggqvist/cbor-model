@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/haggqvist/cbor-model/compare/v0.5.0...v0.6.0) (2026-05-05)
+
+
+### Features
+
+* export EnumStyle and TypeConverter ([9fcd7ce](https://github.com/haggqvist/cbor-model/commit/9fcd7ceb170d566aa64ef7228d665faea83a0770))
+
+
+### Bug Fixes
+
+* propagate nested constraints in TypeConverter.convert ([8a37a14](https://github.com/haggqvist/cbor-model/commit/8a37a14b5def9774263624864d00f76da334e116))
+
 ## [0.5.0](https://github.com/haggqvist/cbor-model/compare/v0.4.1...v0.5.0) (2026-04-27)
 
 
