@@ -6,6 +6,7 @@ from datetime import datetime
 from enum import Enum
 from types import NoneType
 from typing import (
+    Annotated,
     Any,
     Literal,
     Self,
@@ -272,6 +273,11 @@ class TypeConverter:
         """Convert a Python type annotation to CDDL type string."""
         if field_info is None:
             field_info = FieldInfo()
+
+        if get_origin(annotation) is Annotated:
+            inner_type, *_ = get_args(annotation)
+            return self.convert(inner_type, FieldInfo.from_annotation(annotation))
+
         origin = get_origin(annotation)
         args = get_args(annotation)
 
