@@ -109,35 +109,39 @@ class NumericConstraint:
     def __bool__(self) -> bool:
         return self.lower is not None or self.upper is not None
 
-    def to_cddl(self, base_type: str) -> str:
-        """Convert numeric bounds to RFC 8610 CDDL."""
-        if not self:
-            return base_type
-
+    def _as_named_type(self) -> str | None:
         if self.lower == (0, True) and self.upper is None:
             return "uint"
-
         if self.upper is not None and self.lower is None:
             upper_value, upper_inclusive = self.upper
             if upper_value < 0 or (upper_value == 0 and not upper_inclusive):
                 return "nint"
+        return None
 
-        if closed_range := self.to_closed_range():
-            lower_bound, upper_bound = closed_range
-            if lower_bound == upper_bound:
-                return str(lower_bound)
-            return f"{lower_bound}..{upper_bound}"
-
+    def _format_open_range(self, base_type: str) -> str:
         if self.lower is not None and self.upper is not None:
             return (
                 f"({base_type} {self._lower_operator()} {self.lower[0]}) "
                 f".and ({base_type} {self._upper_operator()} {self.upper[0]})"
             )
-
         if self.lower is not None:
             return f"{base_type} {self._lower_operator()} {self.lower[0]}"
-
         return f"{base_type} {self._upper_operator()} {self.upper[0]}"
+
+    def to_cddl(self, base_type: str) -> str:
+        """Convert numeric bounds to RFC 8610 CDDL."""
+        if not self:
+            return base_type
+        if named := self._as_named_type():
+            return named
+        if closed_range := self.to_closed_range():
+            lower_bound, upper_bound = closed_range
+            return (
+                str(lower_bound)
+                if lower_bound == upper_bound
+                else f"{lower_bound}..{upper_bound}"
+            )
+        return self._format_open_range(base_type)
 
     def to_closed_range(self) -> tuple[int, int] | None:
         """Normalize integer bounds to an inclusive range when possible."""
