@@ -402,10 +402,20 @@ class CBORModel(BaseModel):
             }
             return cast("Self", handler(mapped))
         if isinstance(value, dict):
-            from_cbor = cast("MapCBORMapping", cls._cbor_mapping()).from_cbor
+            from_cbor = cast(
+                "MapCBORMapping",
+                cls._cbor_mapping(),
+            ).from_cbor
+            unknown_keys = [k for k in value if k not in from_cbor]
+            if unknown_keys and cls.cbor_config.unknown_keys == "forbid":
+                err = (
+                    f"Unknown CBOR key(s) for model {cls.__name__!r}: {unknown_keys!r}"
+                )
+                raise ValueError(err)
             value = {
-                from_cbor.get(k, k): cls._unwrap_field(v, from_cbor.get(k, ""))
+                from_cbor[k]: cls._unwrap_field(v, from_cbor[k])
                 for k, v in value.items()
+                if k in from_cbor
             }
         return cast("Self", handler(value))
 

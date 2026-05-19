@@ -21,6 +21,9 @@ class CBORConfig:
             cbor2. Keys are Python types; values are callables that
             convert an instance of that type to a cbor2-encodable value
             (e.g. `str`, `int`, `list`, `dict`).
+        unknown_keys: Behavior for unknown CBOR map keys during validation.
+            `"forbid"` raises a `ValueError` (default), while `"ignore"`
+            drops unknown keys before model validation.
 
     """
 
@@ -40,7 +43,14 @@ class CBORConfig:
     instance of the type and return a value that can be encoded by cbor2 (e.g.
     a string, int, list, dict, etc.)."""
 
+    unknown_keys: Literal["forbid", "ignore"] = "forbid"
+    """How to handle unknown keys in map-encoded CBOR payloads on validation.
+    `"forbid"` raises an error, `"ignore"` drops the keys."""
+
     def __post_init__(self) -> None:
         if self.tag is not None and self.tag < 0:
             err = f"CBOR tag {self.tag} is invalid. Tags must be non-negative integers."
+            raise ValueError(err)
+        if self.unknown_keys not in ("forbid", "ignore"):
+            err = "CBORConfig.unknown_keys must be one of 'forbid' or 'ignore'"
             raise ValueError(err)
