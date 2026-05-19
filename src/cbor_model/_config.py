@@ -43,7 +43,7 @@ class CBORConfig:
     instance of the type and return a value that can be encoded by cbor2 (e.g.
     a string, int, list, dict, etc.)."""
 
-    unknown_keys: Literal["forbid", "ignore"] = "forbid"
+    unknown_keys: Literal["forbid", "ignore"] = "ignore"
     """How to handle unknown keys in map-encoded CBOR payloads on validation.
     `"forbid"` raises an error, `"ignore"` drops the keys."""
 

@@ -276,9 +276,10 @@ class TestModelLevelTag:
 
 
 class TestSerializationContext:
-    def test_unknown_map_key_raises_by_default(self) -> None:
+    def test_unknown_map_key_raises_when_configured(self) -> None:
 
         class Msg(CBORModel):
+            cbor_config = CBORConfig(unknown_keys="forbid")
             name: Annotated[str, CBORField(key=0)]
             count: Annotated[int, CBORField(key=1)]
 
@@ -287,10 +288,9 @@ class TestSerializationContext:
         with pytest.raises(ValueError, match=r"Unknown CBOR key\(s\)"):
             Msg.model_validate_cbor(payload)
 
-    def test_unknown_map_key_ignored_when_configured(self) -> None:
+    def test_unknown_map_key_ignored_by_default(self) -> None:
 
         class Msg(CBORModel):
-            cbor_config = CBORConfig(unknown_keys="ignore")
             name: Annotated[str, CBORField(key=0)]
             count: Annotated[int, CBORField(key=1)]
 
