@@ -325,7 +325,14 @@ class CBORModel(BaseModel):
                     f"got {type(value).__name__}"
                 )
                 raise ValueError(err)
-            value = cbor2.loads(value)
+            try:
+                value = cbor2.loads(value)
+            except cbor2.CBORDecodeError as exc:
+                err = (
+                    f"Failed to decode bstr_wrap field {field_name!r} "
+                    f"in model {cls.__name__!r}: {exc}"
+                )
+                raise ValueError(err) from exc
         return value
 
     @classmethod

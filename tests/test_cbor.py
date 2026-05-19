@@ -860,6 +860,18 @@ class TestBstrWrap:
         restored = Packet.model_validate_cbor(cbor_bytes)
         assert restored == obj
 
+    def test_bstr_wrap_invalid_payload_includes_context(self) -> None:
+        class Packet(CBORModel):
+            data: Annotated[int, CBORField(key=0, bstr_wrap=True)]
+
+        payload = cbor2.dumps({0: b"\x82"})
+
+        with pytest.raises(
+            ValueError,
+            match=r"Failed to decode bstr_wrap field 'data' in model 'Packet'",
+        ):
+            Packet.model_validate_cbor(payload)
+
     def test_bstr_wrap_with_tag_round_trip(self) -> None:
         class Packet(CBORModel):
             payload: Annotated[int, CBORField(key=0, bstr_wrap=True, tag=1001)]
