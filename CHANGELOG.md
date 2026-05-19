@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/haggqvist/cbor-model/compare/v0.6.0...v0.7.0) (2026-05-19)
+
+
+### Features
+
+* unknown_keys handling in CBORConfig ([3a9bffd](https://github.com/haggqvist/cbor-model/commit/3a9bffd5c3ab618eb1a7df1fae3592967144138c))
+
+
+### Bug Fixes
+
+* add explicit CBOR mapping type guards ([3f9492d](https://github.com/haggqvist/cbor-model/commit/3f9492d5d174f8b90f549ab8945248bcfbc64153))
+* improve bstr_wrap error handling ([a5f6306](https://github.com/haggqvist/cbor-model/commit/a5f630624d12199199a86471c9308b5f96c75d64))
+* surface context when exclude_if callback raises ([014a9f7](https://github.com/haggqvist/cbor-model/commit/014a9f761e1913eb299ce9fb89000384b0436e2b))
+* upgrade to cbor2&gt;=6.1 ([d473bc1](https://github.com/haggqvist/cbor-model/commit/d473bc158c8144edcd8e06fff267282f8e67b0a5))
+
 ## [0.6.0](https://github.com/haggqvist/cbor-model/compare/v0.5.0...v0.6.0) (2026-05-05)
 
 
