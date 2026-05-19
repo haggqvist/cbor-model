@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/haggqvist/cbor-model/compare/v0.7.0...v0.7.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* change default for unknown_keys ([371e91b](https://github.com/haggqvist/cbor-model/commit/371e91b13294bde054dbce0d745cb28a8dfb5222))
+
 ## [0.7.0](https://github.com/haggqvist/cbor-model/compare/v0.6.0...v0.7.0) (2026-05-19)
 
 
