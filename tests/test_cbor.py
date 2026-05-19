@@ -401,6 +401,23 @@ class TestSerializationContext:
         assert positive_data[1] == 10
         assert 1 not in negative_data
 
+    def test_exclude_if_callback_error_includes_field_context(self) -> None:
+
+        class Model(CBORModel):
+            name: Annotated[str, CBORField(key=0)]
+            score: Annotated[
+                int,
+                CBORField(key=1, exclude_if=lambda v: 1 / 0),
+            ]
+
+        obj = Model(name="a", score=10)
+
+        with pytest.raises(
+            ValueError,
+            match=r"exclude_if callback for field 'score' in model 'Model' raised an error",
+        ):
+            obj.model_dump(context=CBORSerializationContext())
+
 
 class TestCustomEncoders:
     def test_custom_encoder_for_http_url(self) -> None:

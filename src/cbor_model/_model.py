@@ -471,15 +471,25 @@ class CBORModel(BaseModel):
         result: dict[int | str, Any] = {}
         for field_name, value in data.items():
             cbor_field = self.get_cbor_field(field_name)
+            if not cbor_field:
+                continue
+            if value is None and context.exclude_none:
+                continue
+            if cbor_field.exclude_if is not None:
+                try:
+                    excluded = cbor_field.exclude_if(value)
+                except Exception as exc:
+                    err = (
+                        f"exclude_if callback for field {field_name!r} "
+                        f"in model {type(self).__name__!r} raised an error: {exc}"
+                    )
+                    raise ValueError(err) from exc
+                if excluded:
+                    continue
             if (
-                not cbor_field
-                or (value is None and context.exclude_none)
-                or (cbor_field.exclude_if and cbor_field.exclude_if(value))
-                or (
-                    isinstance(value, (list, tuple, dict, set))
-                    and not value
-                    and context.exclude_empty
-                )
+                isinstance(value, (list, tuple, dict, set))
+                and not value
+                and context.exclude_empty
             ):
                 continue
             result[to_cbor[field_name]] = self._wrap_field(field_name, value)
