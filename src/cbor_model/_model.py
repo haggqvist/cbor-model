@@ -1,5 +1,6 @@
 # ruff: noqa: ANN401
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from threading import Lock
 from typing import (
@@ -8,6 +9,7 @@ from typing import (
     ClassVar,
     NamedTuple,
     Self,
+    TypeGuard,
     cast,
     get_args,
     get_origin,
@@ -31,6 +33,13 @@ from ._util import is_optional as _is_optional_annotation
 type _CborValue = (
     int | float | str | bytes | bool | None | list[Any] | dict[Any, Any] | cbor2.CBORTag
 )
+
+
+def _is_cbor_sequence(value: Any) -> TypeGuard[Sequence[Any]]:
+    return isinstance(value, Sequence) and not isinstance(
+        value,
+        (str, bytes, bytearray),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -419,15 +428,16 @@ class CBORModel(BaseModel):
         """
         if not isinstance(info.context, CBORSerializationContext):
             return cast("Self", handler(value))
-        if isinstance(value, list):
+        if _is_cbor_sequence(value):
             array_order = cls._require_array_mapping().array_order
+            sequence_value = list(value)
             mapped: dict[str, Any] = {
-                field_name: cls._unwrap_field(value[i], field_name)
+                field_name: cls._unwrap_field(sequence_value[i], field_name)
                 for i, field_name in enumerate(array_order)
-                if i < len(value)
+                if i < len(sequence_value)
             }
             return cast("Self", handler(mapped))
-        if isinstance(value, dict):
+        if isinstance(value, Mapping):
             from_cbor = cls._require_map_mapping().from_cbor
             unknown_keys = [k for k in value if k not in from_cbor]
             if unknown_keys and cls.cbor_config.unknown_keys == "forbid":

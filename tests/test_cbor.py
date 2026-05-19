@@ -708,7 +708,7 @@ class TestArrayEncoding:
 
         assert isinstance(decoded, cbor2.CBORTag)
         assert decoded.tag == 50200
-        assert decoded.value == ["hello", 42]
+        assert list(decoded.value) == ["hello", 42]
 
         restored = Record.model_validate_cbor(cbor_bytes)
         assert restored.a == "hello"
