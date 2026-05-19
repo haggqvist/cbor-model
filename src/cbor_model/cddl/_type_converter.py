@@ -269,6 +269,24 @@ class TypeConverter:
     ) -> None:
         self.type_map = type_map or DEFAULT_TYPE_MAP.copy()
 
+    def _convert_with_origin(
+        self,
+        annotation: type[Any],
+        origin: Any,
+        args: tuple[Any, ...],
+        field_info: FieldInfo,
+    ) -> str | None:
+        """Dispatch conversion for types that have a generic origin. Returns None if unhandled."""
+        if is_union_type(annotation):
+            return self._convert_union(args, field_info)
+        if origin is list:
+            return self._convert_list(args, field_info)
+        if origin is dict:
+            return self._convert_dict(args, field_info)
+        if origin is Literal:
+            return self._convert_literal(args)
+        return None
+
     def convert(
         self,
         annotation: type[Any],
@@ -286,14 +304,10 @@ class TypeConverter:
         args = get_args(annotation)
 
         if origin is not None:
-            if is_union_type(annotation):
-                return self._convert_union(args, field_info)
-            if origin is list:
-                return self._convert_list(args, field_info)
-            if origin is dict:
-                return self._convert_dict(args, field_info)
-            if origin is Literal:
-                return self._convert_literal(args)
+            if result := self._convert_with_origin(
+                annotation, origin, args, field_info
+            ):
+                return result
 
         if annotation in self.type_map:
             return self._apply_constraints(
@@ -318,7 +332,10 @@ class TypeConverter:
             elif isinstance(arg, str):
                 parts.append(f'"{arg}"')
             else:
-                err = f"Unsupported Literal value type {type(arg).__name__!r} for CDDL generation"
+                err = (
+                    f"Unsupported Literal value type "
+                    f"{type(arg).__name__!r} for CDDL generation"
+                )
                 raise TypeError(err)
         return " / ".join(parts)
 
