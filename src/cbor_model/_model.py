@@ -192,6 +192,28 @@ class CBORModel(BaseModel):
         return cls.__cbor_mapping__[cls]
 
     @classmethod
+    def _require_map_mapping(cls) -> MapCBORMapping:
+        mapping = cls._cbor_mapping()
+        if not isinstance(mapping, MapCBORMapping):
+            err = (
+                f"Expected MapCBORMapping for model {cls.__name__!r}, "
+                f"got {type(mapping).__name__}"
+            )
+            raise TypeError(err)
+        return mapping
+
+    @classmethod
+    def _require_array_mapping(cls) -> ArrayCBORMapping:
+        mapping = cls._cbor_mapping()
+        if not isinstance(mapping, ArrayCBORMapping):
+            err = (
+                f"Expected ArrayCBORMapping for model {cls.__name__!r}, "
+                f"got {type(mapping).__name__}"
+            )
+            raise TypeError(err)
+        return mapping
+
+    @classmethod
     def _collect_cbor_fields(cls, *, by_key: bool) -> dict[int | str, str]:
         result: dict[int | str, str] = {}
         for field_name in (*cls.model_fields, *cls.model_computed_fields):
@@ -398,10 +420,7 @@ class CBORModel(BaseModel):
         if not isinstance(info.context, CBORSerializationContext):
             return cast("Self", handler(value))
         if isinstance(value, list):
-            array_order = cast(
-                "ArrayCBORMapping",
-                cls._cbor_mapping(),
-            ).array_order
+            array_order = cls._require_array_mapping().array_order
             mapped: dict[str, Any] = {
                 field_name: cls._unwrap_field(value[i], field_name)
                 for i, field_name in enumerate(array_order)
@@ -409,10 +428,7 @@ class CBORModel(BaseModel):
             }
             return cast("Self", handler(mapped))
         if isinstance(value, dict):
-            from_cbor = cast(
-                "MapCBORMapping",
-                cls._cbor_mapping(),
-            ).from_cbor
+            from_cbor = cls._require_map_mapping().from_cbor
             unknown_keys = [k for k in value if k not in from_cbor]
             if unknown_keys and cls.cbor_config.unknown_keys == "forbid":
                 err = (
@@ -451,7 +467,7 @@ class CBORModel(BaseModel):
         data: dict[str, Any],
         context: CBORSerializationContext,
     ) -> dict[int | str, Any]:
-        to_cbor = cast("MapCBORMapping", self._cbor_mapping()).to_cbor
+        to_cbor = self._require_map_mapping().to_cbor
         result: dict[int | str, Any] = {}
         for field_name, value in data.items():
             cbor_field = self.get_cbor_field(field_name)
@@ -474,7 +490,7 @@ class CBORModel(BaseModel):
         data: dict[str, Any],
         context: CBORSerializationContext,
     ) -> list[Any]:
-        array_order = cast("ArrayCBORMapping", self._cbor_mapping()).array_order
+        array_order = self._require_array_mapping().array_order
         result = [self._wrap_field(f, data.get(f)) for f in array_order]
         if context.exclude_none:
             while result and result[-1] is None:

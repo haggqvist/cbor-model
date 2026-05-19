@@ -828,6 +828,37 @@ class TestComputedFields:
         assert cbor2.loads(cbor_bytes) == ["hello", "HELLO"]
 
 
+class TestMappingGuards:
+    @pytest.mark.parametrize(
+        ("encoding", "payload", "expected_error"),
+        [
+            ("map", ["ok"], r"Expected ArrayCBORMapping"),
+            ("array", {0: "ok"}, r"Expected MapCBORMapping"),
+        ],
+    )
+    def test_validation_requires_expected_mapping_type(
+        self,
+        encoding: str,
+        payload: list[str] | dict[int, str],
+        expected_error: str,
+    ) -> None:
+        if encoding == "map":
+
+            class Msg(CBORModel):
+                name: Annotated[str, CBORField(key=0)]
+        else:
+
+            class Msg(CBORModel):
+                cbor_config = CBORConfig(encoding="array")
+                name: Annotated[str, CBORField(index=0)]
+
+        with pytest.raises(TypeError, match=expected_error):
+            Msg.model_validate(
+                payload,
+                context=CBORSerializationContext(),
+            )
+
+
 class TestBstrWrap:
     def test_bstr_wrap_map_encoding_round_trip(self) -> None:
         class Inner(CBORModel):
