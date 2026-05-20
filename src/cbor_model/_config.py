@@ -22,7 +22,7 @@ class CBORConfig:
             convert an instance of that type to a cbor2-encodable value
             (e.g. `str`, `int`, `list`, `dict`).
         unknown_keys: Behavior for unknown CBOR map keys during validation.
-            `"forbid"` raises a `ValueError` (default), while `"ignore"`
+            `"forbid"` raises a `ValueError`, while `"ignore"` (default)
             drops unknown keys before model validation.
 
     """
