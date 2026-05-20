@@ -318,6 +318,7 @@ class CBORModel(BaseModel):
             field_name: Name of the model field to look up.
 
         Looks up both regular and computed model fields.
+
         """
         if field_name in cls.model_fields:
             return cls._get_field_annotation(field_name, CBORField)
@@ -396,6 +397,7 @@ class CBORModel(BaseModel):
             data: Raw CBOR-encoded bytes to decode.
             context: Serialization context controlling exclusion behavior.
                 Defaults to the model's ``__default_ctx__``.
+
         """
         context = context or cls.__default_ctx__
         decoded = cbor2.loads(data)
@@ -453,11 +455,11 @@ class CBORModel(BaseModel):
         return cast("Self", handler(value))
 
     @model_serializer(mode="wrap")
-    def serialize_model(
+    def serialize_model(  # noqa: ANN202
         self,
         handler: SerializerFunctionWrapHandler,
         info: SerializationInfo,
-    ) -> dict[str, Any] | dict[int | str, Any] | list[Any]:
+    ):
         """Pydantic model serializer that converts model fields to CBOR-encodable structures.
 
         When the serialization context is a :class:`CBORSerializationContext`,
