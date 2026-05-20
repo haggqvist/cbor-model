@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.2](https://github.com/haggqvist/cbor-model/compare/v0.7.1...v0.7.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* remove type hint from model_serializer ([ed498c0](https://github.com/haggqvist/cbor-model/commit/ed498c0e916b59627a665c2c4c7a49628fb6ae67))
+* unknown_keys docstring default value ([649de1c](https://github.com/haggqvist/cbor-model/commit/649de1ce8129981e54134d36b92bd346a58ce18a))
+
 ## [0.7.1](https://github.com/haggqvist/cbor-model/compare/v0.7.0...v0.7.1) (2026-05-19)
 
 
