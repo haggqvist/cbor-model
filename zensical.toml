@@ -96,7 +96,6 @@ paths = ["src"]
 [project.plugins.mkdocstrings.handlers.python.options]
 docstring_style = "google"
 show_source = true
-show_private = false
-show_root_heading =  true
-show_symbol_type_heading =  true
+show_root_heading = true
+show_symbol_type_heading = true
 show_symbol_type_toc = true
