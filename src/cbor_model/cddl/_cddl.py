@@ -20,17 +20,23 @@ if TYPE_CHECKING:
 
 
 type EnumStyle = Literal["union", "choices"]
+"""Controls how ``enum.Enum`` types are emitted in CDDL output.
+
+``"union"`` (default) emits a control operator union ``&(...)``;
+``"choices"`` emits individual value constants with ``/=`` assignments,
+as expected by tools such as zcbor.
+"""
 
 
 class CDDLGenerator:
-    """Generates CDDL schemas from :class:`~cbor_model.CBORModel` subclasses.
+    """Generates CDDL schemas from ``CBORModel`` subclasses.
 
-    Walks the model graph — including nested models and :class:`~enum.Enum`
-    types — and emits a complete CDDL document. Each model is emitted at most
+    Walks the model graph - including nested models and ``enum.Enum``
+    types - and emits a complete CDDL document. Each model is emitted at most
     once even when referenced by multiple parents.
 
-    Use :meth:`generate` to produce a CDDL string for one or more root models.
-    Call :meth:`reset` if you need to reuse the same instance across independent
+    Use ``generate()`` to produce a CDDL string for one or more root models.
+    Call ``reset()`` if you need to reuse the same instance across independent
     generation runs.
 
     Examples:
@@ -64,10 +70,10 @@ class CDDLGenerator:
         """Initialize the generator.
 
         Args:
-            type_converter: Custom :class:`TypeConverter` instance used to map
+            type_converter: Custom ``TypeConverter`` instance used to map
                 Python types to CDDL type names.  When ``None``, a default
-                :class:`TypeConverter` is used.
-            enum_style: Controls how :class:`~enum.Enum` types are emitted.
+                ``TypeConverter`` is used.
+            enum_style: Controls how ``enum.Enum`` types are emitted.
                 ``"union"`` (default) produces a CDDL control operator union
                 ``&(...)``; ``"choices"`` produces individual value constants
                 with ``/=`` choice assignments, as expected by tools like
@@ -95,12 +101,12 @@ class CDDLGenerator:
 
         When multiple models are given, shared type definitions are emitted only
         once. The generator state is always reset at the start of the call;
-        use `reset()` followed by direct `_generate_struct` calls if
+        use ``reset()`` followed by direct ``_generate_struct`` calls if
         incremental accumulation is needed.
 
         Args:
-            model_or_models: A single :class:`~cbor_model.CBORModel` subclass
-                or an iterable of subclasses to generate definitions for.
+            model_or_models: A single ``CBORModel`` subclass or an iterable
+                of subclasses to generate definitions for.
 
         """
         models = (

@@ -34,6 +34,13 @@ def extract_type_aliases(annotation: Any) -> list[TypeAliasType]:
 
 
 def is_type_of[T](annotation: Any, target: type[T]) -> TypeGuard[type[T]]:
+    """Return ``True`` when ``annotation`` is a concrete subclass of ``target``.
+
+    Args:
+        annotation: Type annotation to test.
+        target: Class to check against.
+
+    """
     return isinstance(annotation, type) and issubclass(annotation, target)
 
 
@@ -41,6 +48,16 @@ def extract_types_matching[T](
     annotation: Any,
     predicate: type[T],
 ) -> list[type[T]]:
+    """Return all concrete subclasses of ``predicate`` found in ``annotation``.
+
+    Recursively walks generic type arguments and resolves PEP 695 type aliases.
+
+    Args:
+        annotation: Type annotation to search, e.g. a union, ``Annotated``
+            type, or plain class.
+        predicate: Base class to match against.
+
+    """
     types: list[type[T]] = []
     if is_type_alias(annotation):
         return extract_types_matching(annotation.__value__, predicate)

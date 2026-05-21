@@ -23,7 +23,13 @@ from cbor_model._util import is_optional, is_union_type
 
 
 def type_size(t: type[Enum] | TypeAliasType) -> int | None:
-    """Return inferred cardinality for Enum and PEP 695 alias types."""
+    """Return inferred cardinality for ``enum.Enum`` and PEP 695 alias types.
+
+    Args:
+        t: An ``enum.Enum`` subclass or a ``TypeAliasType``
+            whose value is a union of literal choices.
+
+    """
     if isinstance(t, type) and issubclass(t, Enum):
         return len(t)
 
@@ -64,7 +70,13 @@ class NumericConstraint:
         cls,
         metadata: list[BaseMetadata],
     ) -> Self:
-        """Extract the strongest numeric bounds from metadata."""
+        """Extract the strongest numeric bounds from metadata.
+
+        Args:
+            metadata: List of annotated-types constraint objects (e.g.
+                ``Gt``, ``Le``).
+
+        """
         lower: tuple[Any, bool] | None = None
         upper: tuple[Any, bool] | None = None
 
@@ -129,7 +141,13 @@ class NumericConstraint:
         return f"{base_type} {self._upper_operator()} {self.upper[0]}"
 
     def to_cddl(self, base_type: str) -> str:
-        """Convert numeric bounds to RFC 8610 CDDL."""
+        """Convert numeric bounds to RFC 8610 CDDL.
+
+        Args:
+            base_type: CDDL base type string (e.g. ``"int"``) used when no
+                named type or closed range applies.
+
+        """
         if not self:
             return base_type
         if named := self._as_named_type():
@@ -267,6 +285,14 @@ class TypeConverter:
         self,
         type_map: dict[type, str] | None = None,
     ) -> None:
+        """Initialize the converter with an optional custom type map.
+
+        Args:
+            type_map: Mapping from Python types to CDDL type strings.  When
+                ``None``, ``DEFAULT_TYPE_MAP`` is used, which covers
+                ``str``, ``bytes``, ``int``, ``bool``, ``float``,
+                ``datetime.datetime``, ``uuid.UUID``, and ``typing.Any``.
+        """
         self.type_map = type_map or DEFAULT_TYPE_MAP.copy()
 
     def _convert_with_origin(
@@ -292,7 +318,14 @@ class TypeConverter:
         annotation: type[Any],
         field_info: FieldInfo | None = None,
     ) -> str:
-        """Convert a Python type annotation to CDDL type string."""
+        """Convert a Python type annotation to CDDL type string.
+
+        Args:
+            annotation: The Python type annotation to convert.
+            field_info: Optional ``FieldInfo`` providing constraint metadata.
+                When ``None``, a plain ``FieldInfo`` is used.
+
+        """
         if field_info is None:
             field_info = FieldInfo()
 

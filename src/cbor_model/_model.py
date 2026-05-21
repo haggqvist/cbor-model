@@ -44,17 +44,18 @@ def _is_cbor_sequence(value: Any) -> TypeGuard[Sequence[Any]]:
 
 @dataclass(frozen=True, slots=True)
 class CBORSerializationContext:
-    """Controls serialization behavior when encoding a :class:`CBORModel`.
+    """Controls serialization behavior when encoding a ``CBORModel``.
 
-    Pass an instance as the `context` argument to :meth:`CBORModel.model_dump_cbor`
-    or :meth:`CBORModel.model_validate_cbor` to override the defaults.
+    Pass an instance as the `context` argument to
+    ``model_dump_cbor()`` or ``model_validate_cbor()`` to override the
+    defaults.
 
     Attributes:
-        exclude_none: Omit fields whose value is `None` from the serialized
-            output. Defaults to `True`.
+        exclude_none: Omit fields whose value is ``None`` from the serialized
+            output. Defaults to ``True``.
         exclude_empty: Omit fields whose value is an empty collection
-            (`list`, `tuple`, `dict`, or `set`) from the serialized output.
-            Defaults to `True`.
+            (``list``, ``tuple``, ``dict``, or ``set``) from the serialized
+            output. Defaults to ``True``.
 
     """
 
@@ -63,6 +64,14 @@ class CBORSerializationContext:
 
 
 class MapCBORMapping(NamedTuple):
+    """Pre-computed key mappings for map-encoded CBOR serialization.
+
+    Attributes:
+        to_cbor: Maps Python field name to CBOR map key (``int`` or ``str``).
+        from_cbor: Maps CBOR map key back to Python field name.
+
+    """
+
     to_cbor: dict[str, int | str]
     from_cbor: dict[int | str, str]
 
@@ -74,16 +83,16 @@ class ArrayCBORMapping(NamedTuple):
 class CBORModel(BaseModel):
     """Base class for CBOR-serializable models.
 
-    Subclass `CBORModel` and declare fields using Pydantic's standard field
+    Subclass ``CBORModel`` and declare fields using Pydantic's standard field
     syntax, annotating each field that should be included in CBOR output with
-    a :class:`CBORField`.
+    a ``CBORField``.
 
     Serialization and deserialization are performed with
-    :meth:`model_dump_cbor` and :meth:`model_validate_cbor` respectively.
+    ``model_dump_cbor()`` and ``model_validate_cbor()`` respectively.
 
     Attributes:
-        cbor_config: A :class:`CBORConfig` instance that controls encoding
-            behavior for the model. See :class:`CBORConfig` for the full
+        cbor_config: A ``CBORConfig`` instance that controls encoding
+            behavior for the model. See ``CBORConfig`` for the full
             list of options.
 
     Examples:
@@ -312,10 +321,14 @@ class CBORModel(BaseModel):
 
     @classmethod
     def get_cbor_field(cls, field_name: str) -> CBORField | None:
-        """Return the :class:`CBORField` annotation for *field_name*, or ``None``.
+        """Return the ``CBORField`` annotation for *field_name*.
 
         Args:
             field_name: Name of the model field to look up.
+
+        Returns:
+            The ``CBORField`` attached to the field, or ``None`` if the
+            field has no ``CBORField`` annotation.
 
         Looks up both regular and computed model fields.
 
@@ -424,9 +437,16 @@ class CBORModel(BaseModel):
     ) -> Self:
         """Pydantic model validator that maps CBOR-decoded structures to model fields.
 
-        When the validation context is a :class:`CBORSerializationContext`,
+        When the validation context is a ``CBORSerializationContext``,
         translates CBOR array or map representations back to field names before
         delegating to the standard Pydantic validator.
+
+        Args:
+            value: The raw value to validate, typically a decoded CBOR map or
+                sequence.
+            handler: Pydantic's standard validation handler to delegate to.
+            info: Validation metadata including the active context.
+
         """
         if not isinstance(info.context, CBORSerializationContext):
             return cast("Self", handler(value))
@@ -462,9 +482,14 @@ class CBORModel(BaseModel):
     ):
         """Pydantic model serializer that converts model fields to CBOR-encodable structures.
 
-        When the serialization context is a :class:`CBORSerializationContext`,
-        remaps field names to their CBOR keys or indices and applies
-        exclusion rules before delegating to the standard Pydantic serializer.
+        When the serialization context is a ``CBORSerializationContext``,
+        remaps field names to their CBOR keys or indices and applies exclusion
+        rules before delegating to the standard Pydantic serializer.
+
+        Args:
+            handler: Pydantic's standard serialization handler to delegate to.
+            info: Serialization metadata including the active context.
+
         """
         data: dict[str, Any] = handler(self)
 

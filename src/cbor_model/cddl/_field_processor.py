@@ -42,7 +42,20 @@ class FieldProcessor:
         model_name: str,
         model_prefix: str | None = None,
     ) -> ProcessedField:
-        """Generate CDDL field definition from Pydantic FieldInfo and CBORField."""
+        """Generate CDDL field definition from Pydantic FieldInfo and CBORField.
+
+        Args:
+            field_name: Python attribute name of the field.
+            field_info: Pydantic field metadata, including the type annotation.
+            cbor_field: CBOR-specific field metadata controlling encoding and
+                CDDL output.
+            config: Model-level CBOR configuration (encoding style, etc.).
+            model_name: Qualified model name used in error messages.
+            model_prefix: Optional prefix prepended to key-based CDDL
+                identifiers for map encoding. When ``None``, no prefix is
+                applied.
+
+        """
         if field_info.annotation is None:
             err = f"Field {field_name!r} must have a type annotation"
             raise TypeError(err)

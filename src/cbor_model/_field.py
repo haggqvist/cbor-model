@@ -14,10 +14,10 @@ CBOR2_RESERVED_TAGS = frozenset(
 
 @dataclass(frozen=True, slots=True)
 class CBORField:
-    """Marks a :class:`~pydantic.BaseModel` field for CBOR serialization.
+    """Marks a ``pydantic.BaseModel`` field for CBOR serialization.
 
-    Exactly one of `key` or `index` must be provided. Attach a `CBORField` to a
-    field via :data:`typing.Annotated`:
+    Exactly one of `key` or `index` must be provided. Attach a
+    ``CBORField`` to a field via ``typing.Annotated``:
 
     ```python
     from typing import Annotated
@@ -36,12 +36,12 @@ class CBORField:
             with optional fields at the tail.
         tag: CBOR tag number to wrap this field's value in on serialization.
             Use values above 1000 to avoid conflicts with standard tags. See
-            `CBOR2_RESERVED_TAGS` for tags reserved by cbor2.
+            ``CBOR2_RESERVED_TAGS`` for tags reserved by cbor2.
         override_type: Override the CDDL type name emitted by
-            :class:`CDDLGenerator` for this field.
+            ``CDDLGenerator`` for this field.
         override_name: Override the CDDL field name emitted by
-            :class:`CDDLGenerator` for this field. Used verbatim (no
-            snake_case conversion) and takes priority over the Python
+            ``CDDLGenerator`` for this field. Used verbatim
+            (no snake_case conversion) and takes priority over the Python
             attribute name.
         description: Free-text comment appended to the CDDL field
             definition as ``; <description>``. Has no effect on
@@ -54,8 +54,8 @@ class CBORField:
             back on deserialization. In CDDL the type is rendered as
             ``bstr .cbor <inner_type>``. When combined with ``tag``, the
             tag wraps the ``bstr``: ``#6.N(bstr .cbor <inner_type>)``.
-            For :class:`CBORModel` fields the nested model's own
-            :meth:`~CBORModel.model_dump_cbor` is used so that its
+            For ``CBORModel`` fields the nested model's own
+            ``model_dump_cbor()`` is used so that its
             ``cbor_config`` is respected.
         exclude_if: A callable that receives the field value and returns
             `True` if the field should be omitted from the serialized output.
@@ -69,7 +69,7 @@ class CBORField:
     """Custom CBOR tag number. Use values >1000 to avoid conflicts with
     standard tags.
 
-    See `CBOR2_RESERVED_TAGS` for tags reserved by cbor2 library.
+    See ``CBOR2_RESERVED_TAGS`` for tags reserved by cbor2 library.
     """
     override_type: str | None = None
     override_name: str | None = None

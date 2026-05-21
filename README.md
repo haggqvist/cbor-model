@@ -38,7 +38,7 @@ assert Sensor.model_validate_cbor(data) == sensor
 ### Array encoding
 
 Switch to array encoding by setting `CBORConfig(encoding="array")` and using
-`CBORField(index=...)` — fields are serialized in index order.
+`CBORField(index=...)` - fields are serialized in index order.
 
 ```python
 from typing import Annotated
